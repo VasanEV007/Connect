@@ -24,26 +24,26 @@ export const Badge: React.FC<BadgeProps> = ({
   }[size];
 
   const variantStyles = {
-    default: 'bg-[#141824] text-slate-300 border border-[#222738]',
-    primary: 'bg-[#0D331B] text-[#4ADE80] border border-green-500/30',
-    success: 'bg-[#0D331B] text-[#4ADE80] border border-green-500/30',
-    warning: 'bg-[#382A0E] text-[#FBBF24] border border-amber-500/30',
-    error: 'bg-[#3B1214] text-[#F87171] border border-rose-500/30',
-    outline: 'border border-[#232B3E] text-slate-300 bg-[#0E121A]',
+    default: 'bg-[var(--color-surface-hover)] text-[var(--color-text-main)] border border-[var(--color-border)]',
+    primary: 'bg-[#490B1A]/15 text-[#490B1A] dark:text-[#E5DED2] border border-[#490B1A]/40',
+    success: 'bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+    warning: 'bg-amber-950/20 text-amber-700 dark:text-amber-300 border border-amber-500/30',
+    error: 'bg-rose-950/20 text-rose-700 dark:text-rose-400 border border-rose-500/30',
+    outline: 'border border-[var(--color-border)] text-[var(--color-text-muted)] bg-transparent',
   }[variant];
 
   const dotColors = {
-    default: 'bg-slate-400',
-    primary: 'bg-[#22C55E]',
-    success: 'bg-[#22C55E]',
-    warning: 'bg-[#F59E0B]',
-    error: 'bg-[#EF4444]',
-    outline: 'bg-slate-400',
+    default: 'bg-[var(--color-text-subtle)]',
+    primary: 'bg-[#490B1A] dark:bg-[#E5DED2]',
+    success: 'bg-emerald-500',
+    warning: 'bg-amber-500',
+    error: 'bg-rose-500',
+    outline: 'bg-[var(--color-text-subtle)]',
   }[variant];
 
   return (
     <span className={`${baseStyles} ${sizeStyles} ${variantStyles} ${className}`} {...props}>
-      {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotColors} shrink-0 animate-pulse`} />}
+      {dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColors}`} />}
       {icon && <span className="shrink-0">{icon}</span>}
       <span>{children}</span>
     </span>

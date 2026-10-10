@@ -71,10 +71,10 @@ export const MyActivitiesModule: React.FC = () => {
 
   if (!currentUser) {
     return (
-      <div className="max-w-md mx-auto my-12 bg-[#11151B] p-8 rounded-2xl border border-[#27303D] text-center space-y-4 shadow-xl">
-        <FolderCheck className="w-12 h-12 text-[#22C55E] mx-auto" />
-        <h2 className="text-xl font-bold text-white">Sign In to View Your Activities</h2>
-        <p className="text-xs text-[#A1AAB8]">
+      <div className="max-w-md mx-auto my-12 bg-[var(--color-surface-card)] p-8 rounded-2xl border border-[var(--color-border)] text-center space-y-4 shadow-xl">
+        <FolderCheck className="w-12 h-12 text-[var(--color-burgundy)] dark:text-[#E5DED2] mx-auto" />
+        <h2 className="text-xl font-bold text-[var(--color-text-main)]">Sign In to View Your Activities</h2>
+        <p className="text-xs text-[var(--color-text-muted)]">
           Log in with your official university email to see joined events, application statuses, and verified On-Duty records.
         </p>
         <button
@@ -82,7 +82,7 @@ export const MyActivitiesModule: React.FC = () => {
             setAuthModalMode('LOGIN');
             setIsAuthModalOpen(true);
           }}
-          className="px-5 py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs cursor-pointer"
+          className="px-5 py-2.5 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs cursor-pointer shadow-md"
         >
           Sign In Now
         </button>
@@ -94,17 +94,17 @@ export const MyActivitiesModule: React.FC = () => {
     <div className="space-y-6">
       
       {/* Module Header */}
-      <div className="bg-[#0D1017] p-6 rounded-2xl border border-[#1E2433] shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-[var(--color-surface-card)] p-6 rounded-2xl border border-[var(--color-border)] shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)]">
               My Campus Collaborations & History
             </h1>
             <Badge variant="primary" size="sm">
               Personal Vault
             </Badge>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
             Track your confirmed event registrations, pending applications, hosted initiatives, and verified departmental On-Duty certificates.
           </p>
         </div>
@@ -117,8 +117,8 @@ export const MyActivitiesModule: React.FC = () => {
             aria-selected={activeSubTab === 'joined'}
             className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
               activeSubTab === 'joined'
-                ? 'border border-[#22C55E] text-[#22C55E] bg-[#22C55E]/10 font-bold shadow-xs'
-                : 'border border-[#222634] text-slate-400 hover:text-white bg-[#0A0D14]'
+                ? 'border border-[var(--color-burgundy)] text-[var(--color-burgundy)] dark:text-[#E5DED2] bg-[var(--color-burgundy)]/15 font-bold shadow-xs'
+                : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-surface)]'
             }`}
           >
             Joined Events ({joinedPosts.length})
@@ -130,8 +130,8 @@ export const MyActivitiesModule: React.FC = () => {
             aria-selected={activeSubTab === 'pending'}
             className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
               activeSubTab === 'pending'
-                ? 'border border-[#22C55E] text-[#22C55E] bg-[#22C55E]/10 font-bold shadow-xs'
-                : 'border border-[#222634] text-slate-400 hover:text-white bg-[#0A0D14]'
+                ? 'border border-[var(--color-burgundy)] text-[var(--color-burgundy)] dark:text-[#E5DED2] bg-[var(--color-burgundy)]/15 font-bold shadow-xs'
+                : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-surface)]'
             }`}
           >
             Pending Requests ({myPendingApps.length})
@@ -143,8 +143,8 @@ export const MyActivitiesModule: React.FC = () => {
             aria-selected={activeSubTab === 'hosted'}
             className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
               activeSubTab === 'hosted'
-                ? 'border border-[#22C55E] text-[#22C55E] bg-[#22C55E]/10 font-bold shadow-xs'
-                : 'border border-[#222634] text-slate-400 hover:text-white bg-[#0A0D14]'
+                ? 'border border-[var(--color-burgundy)] text-[var(--color-burgundy)] dark:text-[#E5DED2] bg-[var(--color-burgundy)]/15 font-bold shadow-xs'
+                : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-surface)]'
             }`}
           >
             Hosted by Me ({hostedByMe.length})
@@ -156,11 +156,11 @@ export const MyActivitiesModule: React.FC = () => {
             aria-selected={activeSubTab === 'od-slips'}
             className={`px-4 py-1.5 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
               activeSubTab === 'od-slips'
-                ? 'border border-[#22C55E] text-[#22C55E] bg-[#22C55E]/10 font-bold shadow-xs'
-                : 'border border-[#222634] text-slate-400 hover:text-white bg-[#0A0D14]'
+                ? 'border border-[var(--color-burgundy)] text-[var(--color-burgundy)] dark:text-[#E5DED2] bg-[var(--color-burgundy)]/15 font-bold shadow-xs'
+                : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-surface)]'
             }`}
           >
-            <Award className="w-3.5 h-3.5 text-amber-400" />
+            <Award className="w-3.5 h-3.5 text-amber-500" />
             My OD Slips ({myODSlips.length})
           </button>
         </div>
@@ -171,7 +171,7 @@ export const MyActivitiesModule: React.FC = () => {
         <div className="space-y-4">
           {joinedPosts.length === 0 ? (
             <EmptyState
-              icon={<FolderCheck className="w-6 h-6 text-slate-400" />}
+              icon={<FolderCheck className="w-6 h-6 text-[var(--color-text-muted)]" />}
               title="You have not joined any campus activities yet"
               description="Explore the Events Feed to discover workshops, research calls, hackathons, and carpools."
             />
@@ -180,7 +180,7 @@ export const MyActivitiesModule: React.FC = () => {
               {joinedPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="p-5 rounded-2xl bg-[#0D1017] border border-[#1E2433] shadow-xl space-y-4 hover:border-[#2D3748] transition-all flex flex-col justify-between"
+                  className="p-5 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] shadow-md space-y-4 hover:border-[var(--color-blue-grey)] transition-all flex flex-col justify-between"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
@@ -192,27 +192,27 @@ export const MyActivitiesModule: React.FC = () => {
                       </Badge>
                     </div>
 
-                    <h3 className="font-bold text-sm text-white">
+                    <h3 className="font-bold text-sm text-[var(--color-text-main)]">
                       {post.title}
                     </h3>
 
-                    <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-[var(--color-text-muted)] line-clamp-2 leading-relaxed">
                       {post.description}
                     </p>
 
-                    <div className="pt-2 text-xs text-slate-400 space-y-1">
+                    <div className="pt-2 text-xs text-[var(--color-text-muted)] space-y-1">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-green-400" />
+                        <Calendar className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                         <span>{new Date(post.start_time).toLocaleDateString()} at {new Date(post.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-green-400" />
+                        <MapPin className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                         <span className="truncate">{post.venue_name}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-[#1E2433] flex items-center justify-between gap-2">
+                  <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -242,9 +242,9 @@ export const MyActivitiesModule: React.FC = () => {
         <div className="space-y-4">
           {myPendingApps.length === 0 ? (
             <EmptyState
-              icon={<CheckCircle className="w-6 h-6 text-slate-400" />}
+              icon={<CheckCircle className="w-6 h-6 text-[var(--color-text-muted)]" />}
               title="No pending applications awaiting review"
-              description="Applications submitted to approval-required opportunities will be tracked here until the organizer approves or declines."
+              description="Applications submitted to approval-required events will be tracked here until the organizer approves or declines."
             />
           ) : (
             <div className="space-y-3">
@@ -254,24 +254,24 @@ export const MyActivitiesModule: React.FC = () => {
                 return (
                   <div
                     key={app.id}
-                    className="p-5 rounded-2xl bg-[#0D1017] border border-[#1E2433] shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="p-5 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="warning" size="sm" icon={<Clock className="w-3 h-3" />} dot>
                           Awaiting Host Review
                         </Badge>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-[var(--color-text-muted)]">
                           Submitted {new Date(app.created_at).toLocaleDateString()}
                         </span>
                       </div>
 
-                      <h4 className="font-bold text-sm text-white">
-                        {post?.title || 'Campus Opportunity'}
+                      <h4 className="font-bold text-sm text-[var(--color-text-main)]">
+                        {post?.title || 'Campus Event'}
                       </h4>
 
-                      <p className="text-xs text-slate-400 mt-1">
-                        Organizer: <strong className="text-slate-200">{post?.host_name}</strong> • Role Applied: <strong className="text-slate-200">{app.assigned_role || 'General'}</strong>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                        Organizer: <strong className="text-[var(--color-text-main)]">{post?.host_name}</strong> • Role Applied: <strong className="text-[var(--color-text-main)]">{app.assigned_role || 'General'}</strong>
                       </p>
                     </div>
 
@@ -328,37 +328,37 @@ export const MyActivitiesModule: React.FC = () => {
         <div className="space-y-4">
           {hostedByMe.length === 0 ? (
             <EmptyState
-              icon={<FolderCheck className="w-6 h-6 text-slate-400" />}
-              title="You haven't posted any campus opportunities yet"
-              description="Host a hackathon team, study group, carpool ride, or student project using the Post Opportunity button."
+              icon={<FolderCheck className="w-6 h-6 text-[var(--color-text-muted)]" />}
+              title="You haven't posted any campus events yet"
+              description="Host a hackathon team, study group, carpool ride, or student project using the Create Event button."
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {hostedByMe.map((post) => (
                 <div
                   key={post.id}
-                  className="p-5 rounded-2xl bg-[#0D1017] border border-[#1E2433] shadow-xl space-y-3 flex flex-col justify-between"
+                  className="p-5 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] shadow-md space-y-3 flex flex-col justify-between"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="warning" size="sm">
                         Organizer View
                       </Badge>
-                      <span className="font-mono text-xs text-slate-400 font-semibold">
+                      <span className="font-mono text-xs text-[var(--color-text-muted)] font-semibold">
                         {post.filled_slots} of {post.total_slots} Slots Filled
                       </span>
                     </div>
 
-                    <h4 className="font-bold text-sm text-white">
+                    <h4 className="font-bold text-sm text-[var(--color-text-main)]">
                       {post.title}
                     </h4>
 
-                    <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-[var(--color-text-muted)] line-clamp-2 leading-relaxed">
                       {post.description}
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-[#1E2433] flex items-center justify-between gap-2">
+                  <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -387,18 +387,18 @@ export const MyActivitiesModule: React.FC = () => {
       {activeSubTab === 'od-slips' && (
         <div className="space-y-4">
           <div>
-            <h3 className="font-bold text-sm text-white flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-green-400" />
+            <h3 className="font-bold text-sm text-[var(--color-text-main)] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[var(--color-text-subtle)]" />
               Verified Institutional On-Duty (OD) Certificates
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
               Official attendance regularizations authenticated by faculty coordinators for departmental ERP adjustment.
             </p>
           </div>
 
           {myODSlips.length === 0 ? (
             <EmptyState
-              icon={<Award className="w-6 h-6 text-slate-400" />}
+              icon={<Award className="w-6 h-6 text-[var(--color-text-muted)]" />}
               title="No official OD certificates issued yet"
               description="Once faculty coordinators mark and verify your attendance in official academic workshops or research sessions, your printable slips will appear here."
             />
@@ -407,32 +407,32 @@ export const MyActivitiesModule: React.FC = () => {
               {myODSlips.map((slip) => (
                 <div
                   key={slip.id}
-                  className="p-5 rounded-2xl bg-[#0D1017] border border-[#1E2433] shadow-xl space-y-3"
+                  className="p-5 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] shadow-md space-y-3"
                 >
                   <div className="flex items-center justify-between">
                     <Badge variant="success" size="sm" icon={<ShieldCheck className="w-3 h-3" />} dot>
                       OD Verified
                     </Badge>
-                    <span className="font-mono text-[10px] text-slate-400">
+                    <span className="font-mono text-[10px] text-[var(--color-text-muted)]">
                       {slip.verification_hash.slice(0, 18)}...
                     </span>
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-sm text-white">
+                    <h4 className="font-bold text-sm text-[var(--color-text-main)]">
                       {slip.event_title}
                     </h4>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Sanctioned by: <strong className="text-slate-200">{slip.faculty_name}</strong> ({slip.faculty_dept})
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      Sanctioned by: <strong className="text-[var(--color-text-main)]">{slip.faculty_name}</strong> ({slip.faculty_dept})
                     </p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-[#07090E] border border-[#1E2433] flex items-center justify-between text-xs">
+                  <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-between text-xs">
                     <div>
-                      <div className="font-bold text-green-400">Sanctioned: {slip.od_hours} Hours OD</div>
-                      <div className="text-[11px] text-slate-400">Date: {slip.event_date}</div>
+                      <div className="font-bold text-[var(--color-burgundy)] dark:text-[#E5DED2]">Sanctioned: {slip.od_hours} Hours OD</div>
+                      <div className="text-[11px] text-[var(--color-text-muted)]">Date: {slip.event_date}</div>
                     </div>
-                    <div className="text-right font-mono text-[11px] text-slate-300">
+                    <div className="text-right font-mono text-[11px] text-[var(--color-text-muted)]">
                       {slip.student_roll}
                     </div>
                   </div>

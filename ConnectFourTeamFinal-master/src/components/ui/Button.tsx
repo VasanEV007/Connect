@@ -21,7 +21,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   type = 'button',
   ...props
 }, ref) => {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] select-none';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] select-none cursor-pointer';
 
   const sizeStyles = {
     sm: 'text-xs px-3 py-1.5 gap-1.5',
@@ -30,11 +30,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   }[size];
 
   const variantStyles = {
-    primary: 'bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold shadow-md shadow-green-500/20 focus-visible:outline-[#22C55E]',
-    secondary: 'bg-[#131722] hover:bg-[#1C2232] text-white border border-[#232B3C] focus-visible:outline-slate-500',
-    outline: 'border border-[#232B3C] hover:border-[#22C55E]/60 hover:text-[#22C55E] text-slate-300 bg-transparent focus-visible:outline-[#22C55E]',
-    danger: 'bg-rose-600 hover:bg-rose-500 text-white shadow-xs focus-visible:outline-rose-600',
-    ghost: 'hover:bg-[#141824] text-slate-300 hover:text-white focus-visible:outline-slate-500',
+    primary: 'bg-[#490B1A] hover:bg-[#5F1023] text-[#E5DED2] border border-[#798DA6]/40 shadow-xs focus-visible:outline-[#798DA6]',
+    secondary: 'bg-[var(--color-surface-card)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-main)] border border-[var(--color-border)] hover:border-[var(--color-blue-grey)] focus-visible:outline-[#798DA6]',
+    outline: 'border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] text-[var(--color-text-muted)] bg-transparent focus-visible:outline-[#798DA6]',
+    danger: 'bg-rose-700 hover:bg-rose-600 text-white shadow-xs focus-visible:outline-rose-600',
+    ghost: 'hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] focus-visible:outline-[#798DA6]',
   }[variant];
 
   return (

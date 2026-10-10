@@ -1,14 +1,14 @@
-# CampusConnect — Amrita Vishwa Vidyapeetham
+# Connect — Amrita Vishwa Vidyapeetham
 
-**Campus Collaboration Platform • Ettimadai Campus, Coimbatore**
+**Student & Faculty Collaboration Platform • Ettimadai Campus, Coimbatore**
 
-CampusConnect is an autonomous campus collaboration and academic coordination platform engineered for students, faculty coordinators, and lab leads at Amrita Vishwa Vidyapeetham. It integrates event discovery, research assistantships, interval clash detection, carpooling, verified On-Duty (OD) regularizations, and scoped peer communications into a unified, accessible interface.
+Connect is an autonomous campus collaboration and academic coordination platform engineered for students, faculty coordinators, and lab leads at Amrita Vishwa Vidyapeetham. It integrates event discovery, research assistantships, interval clash detection, carpooling, verified On-Duty (OD) regularizations, and scoped peer communications into a unified, accessible interface.
 
 ---
 
 ## Architecture Overview
 
-CampusConnect is built on modern web standards with strict type safety, responsive component design, and zero-compromise institutional governance:
+Connect is built on modern web standards with strict type safety, responsive component design, and zero-compromise institutional governance:
 
 - **Frontend Framework**: React 19 with TypeScript
 - **Styling & Design System**: Tailwind CSS v4 with semantic CSS tokens (`--color-primary`, `--color-page-bg`, `--color-surface`, etc.)

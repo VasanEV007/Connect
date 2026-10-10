@@ -41,12 +41,13 @@ import {
 } from '../lib/supabase';
 
 export type NavigationTab = 
-  | 'opportunities' 
-  | 'find-people' 
-  | 'calendar' 
-  | 'my-activities' 
+  | 'events'
+  | 'calendar'
+  | 'my-activities'
+  | 'find-people'
   | 'faculty-portal'
   // Backward compatibility aliases
+  | 'opportunities'
   | 'feed'
   | 'carpool';
 
@@ -64,6 +65,11 @@ interface AppContextType {
   calendarItems: AcademicCalendarItem[];
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
+  
+  // Theme Management (Dark / Light mode)
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
+  toggleTheme: () => void;
   
   // Modals & Active View States
   selectedPostForDetail: Post | null;
@@ -150,10 +156,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [landmarks] = useState<CampusLandmark[]>(CAMPUS_LANDMARKS);
   const [calendarItems] = useState<AcademicCalendarItem[]>(ACADEMIC_CALENDAR_ITEMS);
 
-  // Active navigation tab (Default to 'opportunities')
-  const [activeTab, setActiveTabRaw] = useState<NavigationTab>('opportunities');
+  // Active navigation tab (Default to 'events')
+  const [activeTab, setActiveTabRaw] = useState<NavigationTab>('events');
 
-  // Category filter state (used to filter e.g. Carpool inside Opportunities)
+  // Theme state (Dark default with persistent Light mode toggle)
+  const [theme, setThemeState] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('connect_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch {}
+    return 'dark';
+  });
+
+  const setTheme = (newTheme: 'dark' | 'light') => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem('connect_theme', newTheme);
+    } catch {}
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, [theme]);
+
+  // Category filter state (used to filter e.g. Carpool inside Events)
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
 
   // Modals
@@ -169,20 +216,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Set active tab with role-awareness and backward compatibility mapping
   const setActiveTab = (tab: NavigationTab) => {
     let normalizedTab = tab;
-    // Map legacy 'feed' to 'opportunities'
-    if (tab === 'feed') {
-      normalizedTab = 'opportunities';
+    // Map legacy 'opportunities' or 'feed' to 'events'
+    if (tab === 'opportunities' || tab === 'feed') {
+      normalizedTab = 'events';
     }
-    // Map legacy 'carpool' to 'opportunities' with CARPOOL category active
+    // Map legacy 'carpool' to 'events' with CARPOOL category active
     if (tab === 'carpool') {
-      normalizedTab = 'opportunities';
+      normalizedTab = 'events';
       setSelectedCategoryFilter('CARPOOL');
     }
 
     // Role-based portal protection:
-    // If student attempts to navigate to faculty-portal, block and redirect to opportunities
+    // If student attempts to navigate to faculty-portal, block and redirect to events
     if (normalizedTab === 'faculty-portal' && (!currentUser || !canAccessFacultyPortal(currentUser))) {
-      normalizedTab = 'opportunities';
+      normalizedTab = 'events';
     }
 
     setActiveTabRaw(normalizedTab);
@@ -224,7 +271,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Ensure role-based portal security on role changes
   useEffect(() => {
     if (activeTab === 'faculty-portal' && (!currentUser || !canAccessFacultyPortal(currentUser))) {
-      setActiveTabRaw('opportunities');
+      setActiveTabRaw('events');
     }
   }, [currentUser, activeTab]);
 
@@ -785,6 +832,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         calendarItems,
         activeTab,
         setActiveTab,
+        theme,
+        setTheme,
+        toggleTheme,
         selectedPostForDetail,
         setSelectedPostForDetail,
         selectedPostForChat,

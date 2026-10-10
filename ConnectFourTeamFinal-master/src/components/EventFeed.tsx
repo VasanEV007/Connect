@@ -36,7 +36,7 @@ export const EventFeed: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [odOnlyFilter, setOdOnlyFilter] = useState(false);
   const [joinModeFilter, setJoinModeFilter] = useState<'ALL' | 'UNLOCKED' | 'LOCKED'>('ALL');
-  const [deptFilter, setDeptFilter] = useState<string>('ALL');
+  const [deptFilter] = useState<string>('ALL');
   const [sortMode, setSortMode] = useState<'SOONEST' | 'NEWEST' | 'CLOSING_SOON'>('SOONEST');
   
   // Layout mode: Cards or Table
@@ -48,7 +48,7 @@ export const EventFeed: React.FC = () => {
 
   // Category filter definitions
   const categories: { key: string; label: string; icon?: React.ReactNode }[] = [
-    { key: 'ALL', label: 'All Opportunities' },
+    { key: 'ALL', label: 'All Events' },
     { key: 'FACULTY_RESEARCH', label: 'Research' },
     { key: 'FACULTY_WORKSHOP', label: 'Workshops' },
     { key: 'STUDENT_CASUAL', label: 'Casual & Sports' },
@@ -57,7 +57,7 @@ export const EventFeed: React.FC = () => {
     { key: 'CARPOOL', label: 'Carpool & Travel', icon: <Car className="w-3.5 h-3.5" /> },
   ];
 
-  // Filtered Opportunities
+  // Filtered Events
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
       // Search
@@ -75,31 +75,30 @@ export const EventFeed: React.FC = () => {
         }
       }
 
-      // Category filter (including Carpool)
+      // Category
       if (selectedCategoryFilter !== 'ALL' && post.category !== selectedCategoryFilter) {
         return false;
       }
 
-      // OD filter
-      if (odOnlyFilter && !post.od_available) return false;
+      // Join mode
+      if (joinModeFilter !== 'ALL' && post.join_mode !== joinModeFilter) {
+        return false;
+      }
 
-      // Join mode filter
-      if (joinModeFilter !== 'ALL' && post.join_mode !== joinModeFilter) return false;
+      // OD only
+      if (odOnlyFilter && !post.od_available) {
+        return false;
+      }
 
       // Department filter
       if (deptFilter !== 'ALL') {
-        const eligible = post.eligible_departments.includes('ANY') || 
-          post.eligible_departments.some(d => d.toUpperCase().includes(deptFilter));
-        if (!eligible) return false;
+        const hasDept = post.eligible_departments.includes('ANY') || 
+          post.eligible_departments.some(d => d.toUpperCase() === deptFilter.toUpperCase());
+        if (!hasDept) return false;
       }
 
       return true;
-    });
-  }, [posts, searchQuery, selectedCategoryFilter, odOnlyFilter, joinModeFilter, deptFilter]);
-
-  // Sorting
-  const sortedPosts = useMemo(() => {
-    return [...filteredPosts].sort((a, b) => {
+    }).sort((a, b) => {
       if (sortMode === 'SOONEST') {
         return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
       }
@@ -107,34 +106,34 @@ export const EventFeed: React.FC = () => {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
       if (sortMode === 'CLOSING_SOON') {
-        return (a.total_slots - a.filled_slots) - (b.total_slots - b.filled_slots);
+        const remA = a.total_slots - a.filled_slots;
+        const remB = b.total_slots - b.filled_slots;
+        return remA - remB;
       }
       return 0;
     });
-  }, [filteredPosts, sortMode]);
+  }, [posts, searchQuery, selectedCategoryFilter, joinModeFilter, odOnlyFilter, deptFilter, sortMode]);
 
-  // Pagination calculations
-  const totalPages = Math.max(1, Math.ceil(sortedPosts.length / pageSize));
+  // Pagination slice
+  const totalPages = Math.ceil(filteredPosts.length / pageSize) || 1;
   const paginatedPosts = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return sortedPosts.slice(start, start + pageSize);
-  }, [sortedPosts, currentPage, pageSize]);
+    return filteredPosts.slice(start, start + pageSize);
+  }, [filteredPosts, currentPage, pageSize]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || 
+    selectedCategoryFilter !== 'ALL' || 
+    joinModeFilter !== 'ALL' || 
+    odOnlyFilter || 
+    deptFilter !== 'ALL';
 
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedCategoryFilter('ALL');
-    setOdOnlyFilter(false);
     setJoinModeFilter('ALL');
-    setDeptFilter('ALL');
-    setSortMode('SOONEST');
+    setOdOnlyFilter(false);
     setCurrentPage(1);
   };
-
-  const hasActiveFilters = searchQuery !== '' || 
-    selectedCategoryFilter !== 'ALL' || 
-    odOnlyFilter || 
-    joinModeFilter !== 'ALL' || 
-    deptFilter !== 'ALL';
 
   const formatCategoryBadge = (cat: PostCategory) => {
     switch (cat) {
@@ -151,7 +150,7 @@ export const EventFeed: React.FC = () => {
       case 'STUDENT_CREATIVE':
         return <Badge variant="default">Creative & Media</Badge>;
       default:
-        return <Badge variant="default">Campus Activity</Badge>;
+        return <Badge variant="default">Campus Event</Badge>;
     }
   };
 
@@ -161,11 +160,11 @@ export const EventFeed: React.FC = () => {
       {/* Header and Title Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F8FAFC]">
-            Opportunities & Collaboration
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
+            Events & Collaborations
           </h1>
-          <p className="text-xs sm:text-sm text-[#A1AAB8] mt-1">
-            Discover faculty research calls, technical workshops, student hackathons, and campus ride-shares.
+          <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
+            Discover campus events, technical workshops, student research, sports, and transit rides.
           </p>
         </div>
 
@@ -178,20 +177,20 @@ export const EventFeed: React.FC = () => {
               setIsCreatePostModalOpen(true);
             }
           }}
-          className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs shadow-md shadow-green-500/20 transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-text)] font-bold text-xs border border-[#798DA6]/40 shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Create Opportunity</span>
+          <span>Create Event</span>
         </button>
       </div>
 
       {/* Search and Category Filter Rail */}
-      <div className="p-4 rounded-2xl bg-[#11151B] border border-[#27303D] space-y-4">
+      <div className="p-4 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-4">
         
         {/* Search input + view toggles */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-[var(--color-text-subtle)] absolute left-3.5 top-3" />
             <input
               type="text"
               value={searchQuery}
@@ -200,7 +199,7 @@ export const EventFeed: React.FC = () => {
                 setCurrentPage(1);
               }}
               placeholder="Search by title, skills, venue, organizer, or destination..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E]"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-subtle)] text-xs focus:outline-none focus:border-[#490B1A] focus:ring-1 focus:ring-[var(--color-blue-grey)]"
             />
           </div>
 
@@ -209,7 +208,7 @@ export const EventFeed: React.FC = () => {
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as any)}
-              className="px-3 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+              className="px-3 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[#490B1A]"
             >
               <option value="SOONEST">Date: Earliest First</option>
               <option value="NEWEST">Recently Posted</option>
@@ -217,11 +216,13 @@ export const EventFeed: React.FC = () => {
             </select>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center p-1 rounded-xl border border-[#27303D] bg-[#0E121A]">
+            <div className="flex items-center p-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)]">
               <button
                 onClick={() => setViewMode('cards')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === 'cards' ? 'bg-[#171C24] text-[#22C55E]' : 'text-[#A1AAB8] hover:text-white'
+                  viewMode === 'cards' 
+                    ? 'bg-[var(--color-primary)] text-[var(--color-primary-text)]' 
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                 }`}
                 title="Cards View"
                 aria-label="Cards View"
@@ -231,7 +232,9 @@ export const EventFeed: React.FC = () => {
               <button
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === 'table' ? 'bg-[#171C24] text-[#22C55E]' : 'text-[#A1AAB8] hover:text-white'
+                  viewMode === 'table' 
+                    ? 'bg-[var(--color-primary)] text-[var(--color-primary-text)]' 
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                 }`}
                 title="List View"
                 aria-label="List View"
@@ -255,8 +258,8 @@ export const EventFeed: React.FC = () => {
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                   isSelected
-                    ? 'bg-[#22C55E] text-black shadow-xs font-bold'
-                    : 'bg-[#171C24] text-[#A1AAB8] hover:text-white hover:bg-[#202733] border border-[#27303D]'
+                    ? 'bg-[#490B1A] text-[#E5DED2] border border-[#798DA6]/40 shadow-xs font-bold'
+                    : 'bg-[var(--color-surface-card)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-border)]'
                 }`}
               >
                 {cat.icon}
@@ -267,15 +270,15 @@ export const EventFeed: React.FC = () => {
         </div>
 
         {/* Secondary Filters Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#1E2433] text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[var(--color-border)] text-xs">
           <div className="flex flex-wrap items-center gap-3">
             {/* Join Mode Filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[#A1AAB8] text-[11px]">Join Mode:</span>
+              <span className="text-[var(--color-text-muted)] text-[11px]">Join Mode:</span>
               <select
                 value={joinModeFilter}
                 onChange={(e) => setJoinModeFilter(e.target.value as any)}
-                className="px-2.5 py-1 rounded-lg border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-[11px]"
+                className="px-2.5 py-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-main)] text-[11px]"
               >
                 <option value="ALL">All Modes</option>
                 <option value="UNLOCKED">Instant Join</option>
@@ -284,12 +287,12 @@ export const EventFeed: React.FC = () => {
             </div>
 
             {/* OD Available Checkbox */}
-            <label className="flex items-center gap-1.5 text-[11px] text-[#A1AAB8] cursor-pointer hover:text-white">
+            <label className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-main)]">
               <input
                 type="checkbox"
                 checked={odOnlyFilter}
                 onChange={(e) => setOdOnlyFilter(e.target.checked)}
-                className="rounded border-[#27303D] bg-[#0E121A] text-[#22C55E] focus:ring-0"
+                className="rounded border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-primary)] focus:ring-0"
               />
               <span>Sanctioned OD Only</span>
             </label>
@@ -297,14 +300,14 @@ export const EventFeed: React.FC = () => {
 
           {/* Results count & reset */}
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#A1AAB8]">
-              Showing <span className="font-bold text-white">{filteredPosts.length}</span> {filteredPosts.length === 1 ? 'opportunity' : 'opportunities'}
+            <span className="text-[var(--color-text-muted)]">
+              Showing <span className="font-bold text-[var(--color-text-main)]">{filteredPosts.length}</span> {filteredPosts.length === 1 ? 'event' : 'events'}
             </span>
 
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="text-[#22C55E] hover:underline flex items-center gap-1 font-semibold cursor-pointer text-xs"
+                className="text-[var(--color-primary)] hover:underline flex items-center gap-1 font-semibold cursor-pointer text-xs"
               >
                 <RotateCcw className="w-3 h-3" />
                 Reset filters
@@ -319,13 +322,13 @@ export const EventFeed: React.FC = () => {
       {paginatedPosts.length === 0 ? (
         <div className="py-12">
           <EmptyState
-            title={hasActiveFilters ? "No matching opportunities" : "No opportunities yet"}
+            title={hasActiveFilters ? "No matching events" : "No events yet"}
             description={
               hasActiveFilters
                 ? "Try adjusting your search criteria or resetting filters to see more results."
-                : "Be the first to create an opportunity for student research, tech workshops, hackathons, or campus carpools."
+                : "Be the first to create an event for student research, tech workshops, hackathons, or campus carpools."
             }
-            actionLabel="Create Opportunity"
+            actionLabel="Create Event"
             onAction={() => {
               if (!currentUser) {
                 setAuthModalMode('LOGIN');
@@ -350,7 +353,7 @@ export const EventFeed: React.FC = () => {
             return (
               <div
                 key={post.id}
-                className="rounded-2xl bg-[#11151B] border border-[#27303D] p-5 flex flex-col justify-between hover:border-[#384355] transition-all shadow-xs group"
+                className="rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] p-5 flex flex-col justify-between hover:border-[var(--color-blue-grey)] transition-all shadow-xs group"
               >
                 <div>
                   {/* Top Bar: Category & Status */}
@@ -359,18 +362,18 @@ export const EventFeed: React.FC = () => {
 
                     <div className="flex items-center gap-1.5">
                       {post.od_available && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#490B1A]/15 text-[#490B1A] dark:text-[#E5DED2] border border-[#490B1A]/30">
                           {post.od_hours ? `${post.od_hours}h OD` : 'OD Eligible'}
                         </span>
                       )}
 
                       {isFull ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-800/60">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-800/40">
                           Full
                         </span>
                       ) : (
-                        <span className="text-[11px] font-mono text-[#A1AAB8]">
-                          <strong className="text-white">{remainingSlots}</strong> left
+                        <span className="text-[11px] font-mono text-[var(--color-text-muted)]">
+                          <strong className="text-[var(--color-text-main)]">{remainingSlots}</strong> left
                         </span>
                       )}
                     </div>
@@ -379,44 +382,44 @@ export const EventFeed: React.FC = () => {
                   {/* Title */}
                   <h3 
                     onClick={() => setSelectedPostForDetail(post)}
-                    className="font-bold text-base text-[#F8FAFC] group-hover:text-[#22C55E] transition-colors cursor-pointer line-clamp-2"
+                    className="font-bold text-base text-[var(--color-text-main)] group-hover:text-[var(--color-primary)] dark:group-hover:text-[#FFFFFF] transition-colors cursor-pointer line-clamp-2"
                   >
                     {post.title}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-xs text-[#A1AAB8] mt-2 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[var(--color-text-muted)] mt-2 line-clamp-2 leading-relaxed">
                     {post.description}
                   </p>
 
                   {/* Carpool specific details */}
                   {isCarpool && (post.carpool_origin || post.carpool_destination) && (
-                    <div className="mt-3.5 p-3 rounded-xl bg-[#0E121A] border border-[#27303D] space-y-1.5 text-xs">
-                      <div className="flex items-center gap-2 text-white font-semibold">
-                        <Car className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+                    <div className="mt-3.5 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-1.5 text-xs">
+                      <div className="flex items-center gap-2 text-[var(--color-text-main)] font-semibold">
+                        <Car className="w-3.5 h-3.5 text-[var(--color-primary)] dark:text-[#E5DED2] shrink-0" />
                         <span className="truncate">{post.carpool_origin || 'Campus'}</span>
-                        <ArrowRight className="w-3 h-3 text-[#A1AAB8] shrink-0" />
-                        <span className="truncate text-[#22C55E]">{post.carpool_destination || 'Destination'}</span>
+                        <ArrowRight className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />
+                        <span className="truncate text-[var(--color-primary)] dark:text-[#E5DED2] font-bold">{post.carpool_destination || 'Destination'}</span>
                       </div>
                       {post.carpool_cost_split && (
-                        <div className="text-[11px] text-[#A1AAB8]">
-                          Fare split: <span className="text-white font-mono">{post.carpool_cost_split}</span>
+                        <div className="text-[11px] text-[var(--color-text-muted)]">
+                          Fare split: <span className="text-[var(--color-text-main)] font-mono">{post.carpool_cost_split}</span>
                         </div>
                       )}
                     </div>
                   )}
 
                   {/* Timing & Venue */}
-                  <div className="mt-4 space-y-1.5 text-xs text-[#A1AAB8]">
+                  <div className="mt-4 space-y-1.5 text-xs text-[var(--color-text-muted)]">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+                      <Calendar className="w-3.5 h-3.5 text-[var(--color-text-subtle)] shrink-0" />
                       <span>{new Date(post.start_time).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                      <span className="text-[#64748B]">•</span>
+                      <span className="text-[var(--color-text-subtle)]">•</span>
                       <span>{new Date(post.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
+                      <MapPin className="w-3.5 h-3.5 text-[var(--color-text-subtle)] shrink-0" />
                       <span className="truncate">{post.venue_name}</span>
                     </div>
                   </div>
@@ -425,12 +428,12 @@ export const EventFeed: React.FC = () => {
                   {post.required_skills && post.required_skills.length > 0 && (
                     <div className="mt-3.5 flex flex-wrap gap-1">
                       {post.required_skills.slice(0, 3).map((skill, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#171C24] text-[#A1AAB8] border border-[#27303D]">
+                        <span key={idx} className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)]">
                           {skill}
                         </span>
                       ))}
                       {post.required_skills.length > 3 && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] text-[#64748B]">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] text-[var(--color-text-subtle)]">
                           +{post.required_skills.length - 3}
                         </span>
                       )}
@@ -439,26 +442,26 @@ export const EventFeed: React.FC = () => {
 
                   {/* Clash Warning */}
                   {clash.hasClash && (
-                    <div className="mt-3 p-2 rounded-lg bg-amber-950/30 border border-amber-800/40 text-amber-300 text-[11px] flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                    <div className="mt-3 p-2 rounded-lg bg-amber-950/20 border border-amber-800/40 text-amber-700 dark:text-amber-300 text-[11px] flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" />
                       <span className="truncate">Schedule clash detected</span>
                     </div>
                   )}
                 </div>
 
                 {/* Footer: Organizer Identity & Action */}
-                <div className="mt-5 pt-4 border-t border-[#27303D] flex items-center justify-between gap-3">
+                <div className="mt-5 pt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <UserAvatar name={post.host_name} role={post.host_role} size="sm" />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-white truncate">{post.host_name}</p>
-                      <p className="text-[10px] text-[#A1AAB8] font-mono truncate">{post.host_role}</p>
+                      <p className="text-xs font-semibold text-[var(--color-text-main)] truncate">{post.host_name}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)] font-mono truncate">{post.host_role}</p>
                     </div>
                   </div>
 
                   <button
                     onClick={() => setSelectedPostForDetail(post)}
-                    className="px-3 py-1.5 rounded-lg bg-[#171C24] hover:bg-[#22C55E] hover:text-black text-white text-xs font-semibold border border-[#27303D] hover:border-[#22C55E] transition-all cursor-pointer shrink-0"
+                    className="px-3 py-1.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-text)] border border-[#798DA6]/40 text-xs font-bold transition-all cursor-pointer shrink-0 shadow-xs"
                   >
                     View Details
                   </button>
@@ -469,12 +472,12 @@ export const EventFeed: React.FC = () => {
         </div>
       ) : (
         /* TABLE / LIST VIEW */
-        <div className="rounded-2xl bg-[#11151B] border border-[#27303D] overflow-hidden">
+        <div className="rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-[#A1AAB8]">
-              <thead className="bg-[#0E121A] text-[11px] uppercase tracking-wider text-[#F8FAFC] border-b border-[#27303D]">
+            <table className="w-full text-left text-xs text-[var(--color-text-muted)]">
+              <thead className="bg-[var(--color-surface)] text-[11px] uppercase tracking-wider text-[var(--color-text-main)] border-b border-[var(--color-border)]">
                 <tr>
-                  <th className="px-5 py-3 font-semibold">Opportunity</th>
+                  <th className="px-5 py-3 font-semibold">Event</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
                   <th className="px-4 py-3 font-semibold">Host</th>
                   <th className="px-4 py-3 font-semibold">Date & Time</th>
@@ -482,18 +485,18 @@ export const EventFeed: React.FC = () => {
                   <th className="px-5 py-3 font-semibold text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1E2433]">
+              <tbody className="divide-y divide-[var(--color-border)]">
                 {paginatedPosts.map(post => {
                   const remaining = Math.max(0, post.total_slots - post.filled_slots);
                   return (
                     <tr 
                       key={post.id} 
-                      className="hover:bg-[#171C24]/50 transition-colors cursor-pointer"
+                      className="hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                       onClick={() => setSelectedPostForDetail(post)}
                     >
                       <td className="px-5 py-3.5">
-                        <div className="font-semibold text-white max-w-sm truncate">{post.title}</div>
-                        <div className="text-[11px] text-[#64748B] truncate">{post.venue_name}</div>
+                        <div className="font-semibold text-[var(--color-text-main)] max-w-sm truncate">{post.title}</div>
+                        <div className="text-[11px] text-[var(--color-text-subtle)] truncate">{post.venue_name}</div>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         {formatCategoryBadge(post.category)}
@@ -501,7 +504,7 @@ export const EventFeed: React.FC = () => {
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <UserAvatar name={post.host_name} role={post.host_role} size="xs" />
-                          <span className="font-medium text-slate-200">{post.host_name}</span>
+                          <span className="font-medium text-[var(--color-text-main)]">{post.host_name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap font-mono text-[11px]">
@@ -511,8 +514,8 @@ export const EventFeed: React.FC = () => {
                         {remaining} / {post.total_slots}
                       </td>
                       <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                        <span className="text-[#22C55E] font-semibold hover:underline">
-                          Inspect &rarr;
+                        <span className="text-[var(--color-primary)] font-bold hover:underline">
+                          View Details &rarr;
                         </span>
                       </td>
                     </tr>
@@ -526,23 +529,23 @@ export const EventFeed: React.FC = () => {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-[#27303D] pt-4 text-xs text-[#A1AAB8]">
+        <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-4 text-xs text-[var(--color-text-muted)]">
           <div>
-            Page <span className="font-bold text-white">{currentPage}</span> of <span className="font-bold text-white">{totalPages}</span>
+            Page <span className="font-bold text-[var(--color-text-main)]">{currentPage}</span> of <span className="font-bold text-[var(--color-text-main)]">{totalPages}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-[#27303D] bg-[#11151B] hover:text-white disabled:opacity-40 cursor-pointer"
+              className="p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:text-[var(--color-text-main)] disabled:opacity-40 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-[#27303D] bg-[#11151B] hover:text-white disabled:opacity-40 cursor-pointer"
+              className="p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:text-[var(--color-text-main)] disabled:opacity-40 cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

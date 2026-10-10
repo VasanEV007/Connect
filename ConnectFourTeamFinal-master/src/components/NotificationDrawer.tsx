@@ -57,19 +57,19 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       aria-modal="true"
       aria-labelledby="notification-drawer-title"
     >
-      <div className="relative w-full max-w-md h-full bg-[#0D1017] border-l border-[#1E2433] shadow-2xl flex flex-col overflow-hidden text-slate-100">
+      <div className="relative w-full max-w-md h-full bg-[var(--color-surface)] border-l border-[var(--color-border)] shadow-2xl flex flex-col overflow-hidden text-[var(--color-text-main)]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E2433] bg-[#0A0D14]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-surface-card)]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-burgundy/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] border border-[var(--color-burgundy)]/30 flex items-center justify-center font-bold">
               <Bell className="w-4 h-4" />
             </div>
             <div>
-              <h2 id="notification-drawer-title" className="text-base font-bold text-white">
+              <h2 id="notification-drawer-title" className="text-base font-bold text-[var(--color-text-main)]">
                 Notifications
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[var(--color-text-muted)]">
                 {unreadCount > 0 ? `${unreadCount} unread alert${unreadCount > 1 ? 's' : ''}` : 'All caught up'}
               </p>
             </div>
@@ -79,7 +79,7 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             {unreadCount > 0 && (
               <button
                 onClick={markAllNotificationsRead}
-                className="px-2.5 py-1 rounded-full text-xs font-semibold text-[#22C55E] bg-[#22C55E]/10 border border-[#22C55E]/30 hover:bg-[#22C55E]/20 transition-colors flex items-center gap-1"
+                className="px-2.5 py-1 rounded-full text-xs font-semibold text-[var(--color-burgundy)] dark:text-[#E5DED2] bg-burgundy/10 border border-[var(--color-burgundy)]/30 hover:bg-burgundy/20 transition-colors flex items-center gap-1 cursor-pointer"
                 title="Mark all notifications as read"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
@@ -90,7 +90,7 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             <button
               onClick={onClose}
               aria-label="Close notification drawer"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#131722] transition-colors"
+              className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -100,8 +100,8 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Notifications List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {userNotifications.length === 0 ? (
-            <div className="text-center py-20 text-slate-500 text-xs space-y-2">
-              <Bell className="w-8 h-8 mx-auto opacity-30 text-slate-400" />
+            <div className="text-center py-20 text-[var(--color-text-muted)] text-xs space-y-2">
+              <Bell className="w-8 h-8 mx-auto opacity-30 text-[var(--color-text-muted)]" />
               <p>No notifications yet.</p>
             </div>
           ) : (
@@ -114,18 +114,18 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   key={notif.id}
                   className={`p-4 rounded-xl border transition-all text-xs space-y-2.5 ${
                     !notif.read
-                      ? 'border-[#22C55E]/40 bg-[#07090E] shadow-sm'
-                      : 'border-[#1E2433] bg-[#0A0D14]'
+                      ? 'border-[var(--color-burgundy)]/40 bg-[var(--color-surface-card)] shadow-xs'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      {notif.type === 'APP_APPROVED' && <Check className="w-4 h-4 text-[#22C55E]" />}
-                      {notif.type === 'APP_REJECTED' && <AlertCircle className="w-4 h-4 text-rose-400" />}
-                      {notif.type === 'INVITE_RECEIVED' && <Mail className="w-4 h-4 text-[#22C55E]" />}
-                      {notif.type === 'OD_GENERATED' && <Award className="w-4 h-4 text-amber-400" />}
-                      {notif.type === 'APP_SUBMITTED' && <Clock className="w-4 h-4 text-sky-400" />}
-                      <h4 className="font-bold text-white">
+                      {notif.type === 'APP_APPROVED' && <Check className="w-4 h-4 text-[var(--color-burgundy)]" />}
+                      {notif.type === 'APP_REJECTED' && <AlertCircle className="w-4 h-4 text-rose-500" />}
+                      {notif.type === 'INVITE_RECEIVED' && <Mail className="w-4 h-4 text-[var(--color-burgundy)]" />}
+                      {notif.type === 'OD_GENERATED' && <Award className="w-4 h-4 text-amber-500" />}
+                      {notif.type === 'APP_SUBMITTED' && <Clock className="w-4 h-4 text-sky-500" />}
+                      <h4 className="font-bold text-[var(--color-text-main)]">
                         {notif.title}
                       </h4>
                     </div>
@@ -133,18 +133,18 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     {!notif.read && (
                       <button
                         onClick={() => markNotificationRead(notif.id)}
-                        className="text-[10px] text-[#22C55E] hover:underline shrink-0"
+                        className="text-[10px] text-[var(--color-burgundy)] dark:text-[#E5DED2] hover:underline shrink-0 cursor-pointer font-semibold"
                       >
                         Mark read
                       </button>
                     )}
                   </div>
 
-                  <p className="text-slate-400 leading-relaxed text-[11px]">
+                  <p className="text-[var(--color-text-muted)] leading-relaxed text-[11px]">
                     {notif.message}
                   </p>
 
-                  <div className="flex items-center justify-between pt-1 border-t border-[#1E2433] text-[10px] text-slate-500">
+                  <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)]">
                     <span>
                       {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(notif.timestamp).toLocaleDateString()}
                     </span>
@@ -155,13 +155,13 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => acceptInvite(notif.id, notif.related_post_id!)}
-                        className="flex-1 py-1.5 px-3 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-[11px] transition-colors"
+                        className="flex-1 py-1.5 px-3 rounded-full bg-[var(--color-burgundy)] hover:opacity-95 text-[#E5DED2] font-bold text-[11px] transition-colors cursor-pointer"
                       >
                         Accept Invite
                       </button>
                       <button
                         onClick={() => declineInvite(notif.id)}
-                        className="py-1.5 px-3 rounded-full border border-[#232B3C] bg-[#131722] text-slate-300 hover:text-white text-[11px] font-semibold"
+                        className="py-1.5 px-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] text-[11px] font-semibold cursor-pointer"
                       >
                         Decline
                       </button>
@@ -175,7 +175,7 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                           setSelectedODSlipForView(relatedSlip);
                           onClose();
                         }}
-                        className="w-full py-1.5 px-3 rounded-full bg-[#22C55E]/10 border border-[#22C55E] hover:bg-[#22C55E]/20 text-[#22C55E] font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs"
+                        className="w-full py-1.5 px-3 rounded-full bg-burgundy/10 border border-[var(--color-burgundy)] hover:bg-burgundy/20 text-[var(--color-burgundy)] dark:text-[#E5DED2] font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                       >
                         <Award className="w-3.5 h-3.5" />
                         View & Print Official OD Slip
@@ -190,7 +190,7 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                           setSelectedPostForDetail(relatedPost);
                           onClose();
                         }}
-                        className="flex-1 py-1 px-2.5 rounded-full border border-[#232B3C] bg-[#131722] hover:bg-[#1A202F] text-slate-300 text-[11px] font-semibold"
+                        className="flex-1 py-1 px-2.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] text-[11px] font-semibold cursor-pointer"
                       >
                         View Event
                       </button>
@@ -200,7 +200,7 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                             setSelectedPostForChat(relatedPost);
                             onClose();
                           }}
-                          className="flex-1 py-1 px-2.5 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-[11px]"
+                          className="flex-1 py-1 px-2.5 rounded-full bg-[var(--color-burgundy)] hover:opacity-95 text-[#E5DED2] font-bold text-[11px] cursor-pointer"
                         >
                           Open Chat
                         </button>

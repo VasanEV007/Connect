@@ -1,15 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Connect | Student & Faculty Collaboration Platform</title>
-    <meta name="description" content="Connect with people. Discover opportunities. Build together. Amrita Vishwa Vidyapeetham student and faculty collaboration platform." />
+    <title>Connect | University Collaboration Platform</title>
+    <meta name="description" content="Connect with people. Discover events. Build together. University student and faculty collaboration platform." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('connect_theme');
+          var theme = saved === 'light' ? 'light' : 'dark';
+          document.documentElement.className = theme;
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#090B0F] text-[#F8FAFC] antialiased selection:bg-[#22C55E] selection:text-black min-h-screen">
+  <body class="antialiased min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

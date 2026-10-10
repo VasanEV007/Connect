@@ -113,25 +113,25 @@ export const FindPeopleDirectory: React.FC = () => {
       
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F8FAFC]">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
           Find People & Collaborators
         </h1>
-        <p className="text-xs sm:text-sm text-[#A1AAB8] mt-1">
+        <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
           Connect with Amrita students and faculty researchers by technical skills, department, and project interests.
         </p>
       </div>
 
       {/* Search & Filter Controls */}
-      <div className="p-4 rounded-2xl bg-[#11151B] border border-[#27303D] space-y-3">
+      <div className="p-4 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] space-y-3 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, roll number, department, or technical skill..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E]"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
             />
           </div>
 
@@ -139,7 +139,7 @@ export const FindPeopleDirectory: React.FC = () => {
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+              className="px-3 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
             >
               <option value="ALL">All Departments</option>
               {departments.filter(d => d !== 'ALL').map(d => (
@@ -150,7 +150,7 @@ export const FindPeopleDirectory: React.FC = () => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+              className="px-3 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
             >
               <option value="ALL">All Batches</option>
               <option value="2021">Batch 2021</option>
@@ -162,9 +162,9 @@ export const FindPeopleDirectory: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-[#A1AAB8] pt-1">
+        <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] pt-1">
           <span>
-            Found <strong className="text-white">{filteredUsers.length}</strong> {filteredUsers.length === 1 ? 'collaborator' : 'collaborators'}
+            Found <strong className="text-[var(--color-text-main)]">{filteredUsers.length}</strong> {filteredUsers.length === 1 ? 'collaborator' : 'collaborators'}
           </span>
           {(searchQuery || selectedDept !== 'ALL' || selectedYear !== 'ALL') && (
             <button
@@ -173,7 +173,7 @@ export const FindPeopleDirectory: React.FC = () => {
                 setSelectedDept('ALL');
                 setSelectedYear('ALL');
               }}
-              className="text-[#22C55E] hover:underline cursor-pointer"
+              className="text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold hover:underline cursor-pointer"
             >
               Reset filters
             </button>
@@ -198,7 +198,7 @@ export const FindPeopleDirectory: React.FC = () => {
           {filteredUsers.map(user => (
             <div
               key={user.id}
-              className="rounded-2xl bg-[#11151B] border border-[#27303D] p-5 flex flex-col justify-between hover:border-[#384355] transition-all"
+              className="rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] p-5 flex flex-col justify-between hover:border-[var(--color-blue-grey)] transition-all shadow-sm"
             >
               <div className="space-y-3">
                 
@@ -210,7 +210,7 @@ export const FindPeopleDirectory: React.FC = () => {
                     <div className="flex items-center justify-between gap-1">
                       <h3 
                         onClick={() => setViewingProfile(user)}
-                        className="font-bold text-sm text-white truncate cursor-pointer hover:text-[#22C55E] transition-colors"
+                        className="font-bold text-sm text-[var(--color-text-main)] truncate cursor-pointer hover:text-[var(--color-burgundy)] dark:hover:text-[#FFFFFF] transition-colors"
                       >
                         {user.full_name}
                       </h3>
@@ -219,11 +219,11 @@ export const FindPeopleDirectory: React.FC = () => {
                       </Badge>
                     </div>
 
-                    <p className="text-[11px] font-mono text-[#22C55E] truncate mt-0.5">
+                    <p className="text-[11px] font-mono text-[var(--color-text-main)] font-semibold truncate mt-0.5">
                       {user.roll_number || user.designation || user.department}
                     </p>
 
-                    <p className="text-[11px] text-[#A1AAB8] truncate">
+                    <p className="text-[11px] text-[var(--color-text-muted)] truncate">
                       {user.department} {user.joining_year ? `• Batch ${user.joining_year}` : ''}
                     </p>
                   </div>
@@ -231,7 +231,7 @@ export const FindPeopleDirectory: React.FC = () => {
 
                 {/* Bio */}
                 {user.bio && (
-                  <p className="text-xs text-[#A1AAB8] leading-relaxed line-clamp-2">
+                  <p className="text-xs text-[var(--color-text-muted)] leading-relaxed line-clamp-2">
                     {user.bio}
                   </p>
                 )}
@@ -239,20 +239,20 @@ export const FindPeopleDirectory: React.FC = () => {
                 {/* Skills */}
                 {user.skills && user.skills.length > 0 && (
                   <div className="space-y-1 pt-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] block">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] block">
                       Skills
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {user.skills.slice(0, 4).map((skill, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#171C24] text-[#A1AAB8] border border-[#27303D]"
+                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)]"
                         >
                           {skill}
                         </span>
                       ))}
                       {user.skills.length > 4 && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] text-[#64748B]">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] text-[var(--color-text-muted)]">
                           +{user.skills.length - 4}
                         </span>
                       )}
@@ -263,15 +263,15 @@ export const FindPeopleDirectory: React.FC = () => {
               </div>
 
               {/* Bottom Actions */}
-              <div className="pt-4 mt-4 border-t border-[#27303D] flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-[#A1AAB8] text-xs">
+              <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-[var(--color-text-muted)] text-xs">
                   {user.github_url && (
-                    <a href={user.github_url} target="_blank" rel="noreferrer" className="hover:text-white transition-colors" title="GitHub">
+                    <a href={user.github_url} target="_blank" rel="noreferrer" className="hover:text-[var(--color-text-main)] transition-colors" title="GitHub">
                       <Code className="w-3.5 h-3.5" />
                     </a>
                   )}
                   {user.linkedin_url && (
-                    <a href={user.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-white transition-colors" title="LinkedIn">
+                    <a href={user.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-[var(--color-text-main)] transition-colors" title="LinkedIn">
                       <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                         <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
                       </svg>
@@ -282,14 +282,14 @@ export const FindPeopleDirectory: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setViewingProfile(user)}
-                    className="px-3 py-1.5 rounded-lg border border-[#27303D] bg-[#171C24] hover:bg-[#202733] text-white text-xs font-semibold cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-main)] text-xs font-semibold cursor-pointer"
                   >
                     Profile
                   </button>
 
                   <button
                     onClick={() => handleInviteClick(user)}
-                    className="px-3 py-1.5 rounded-lg bg-[#22C55E] hover:bg-[#16A34A] text-black text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
                   >
                     <Mail className="w-3 h-3" />
                     Invite
@@ -315,7 +315,7 @@ export const FindPeopleDirectory: React.FC = () => {
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-base text-white">
+                  <h3 className="font-bold text-base text-[var(--color-text-main)]">
                     {viewingProfile.full_name}
                   </h3>
                   <Badge variant={viewingProfile.role === 'FACULTY' ? 'warning' : 'default'}>
@@ -323,20 +323,20 @@ export const FindPeopleDirectory: React.FC = () => {
                   </Badge>
                 </div>
 
-                <p className="text-xs text-[#22C55E] font-mono mt-0.5">
+                <p className="text-xs text-[var(--color-text-main)] font-mono mt-0.5">
                   {viewingProfile.roll_number || viewingProfile.designation}
                 </p>
 
-                <p className="text-xs text-[#A1AAB8] mt-0.5">
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   {viewingProfile.department}
                 </p>
               </div>
             </div>
 
             {viewingProfile.bio && (
-              <div className="p-3.5 rounded-xl bg-[#11151B] border border-[#27303D]">
-                <h4 className="font-bold text-white text-xs mb-1">About</h4>
-                <p className="text-xs text-[#A1AAB8] leading-relaxed">
+              <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+                <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-1">About</h4>
+                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
                   {viewingProfile.bio}
                 </p>
               </div>
@@ -344,10 +344,10 @@ export const FindPeopleDirectory: React.FC = () => {
 
             {viewingProfile.skills && viewingProfile.skills.length > 0 && (
               <div>
-                <h4 className="font-bold text-white text-xs mb-2">Technical Competencies</h4>
+                <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-2">Technical Competencies</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {viewingProfile.skills.map((s, idx) => (
-                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[#11151B] text-white border border-[#27303D] text-xs">
+                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)] text-xs">
                       {s}
                     </span>
                   ))}
@@ -357,10 +357,10 @@ export const FindPeopleDirectory: React.FC = () => {
 
             {viewingProfile.interests && viewingProfile.interests.length > 0 && (
               <div>
-                <h4 className="font-bold text-white text-xs mb-2">Interests & Activities</h4>
+                <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-2">Interests & Activities</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {viewingProfile.interests.map((it, idx) => (
-                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[#11151B] text-[#A1AAB8] border border-[#27303D] text-xs">
+                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)] text-xs">
                       {it}
                     </span>
                   ))}
@@ -375,10 +375,10 @@ export const FindPeopleDirectory: React.FC = () => {
                   setViewingProfile(null);
                   handleInviteClick(userToInvite);
                 }}
-                className="w-full py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
               >
                 <Mail className="w-4 h-4" />
-                Invite to Opportunity
+                Invite to Event
               </button>
             </div>
           </div>
@@ -391,45 +391,44 @@ export const FindPeopleDirectory: React.FC = () => {
           isOpen={Boolean(invitingUser)}
           onClose={() => setInvitingUser(null)}
           title={`Invite ${invitingUser.full_name}`}
-          description="Send an invitation to join one of your hosted opportunities."
+          description="Send an invitation to join one of your hosted events."
           maxWidth="md"
         >
           <form onSubmit={handleSendInvite} className="p-6 space-y-4 text-xs">
             {inviteSuccess ? (
-              <div className="p-4 rounded-xl bg-green-950/60 border border-green-800 text-green-300 text-center space-y-2">
-                <Check className="w-8 h-8 mx-auto text-green-400" />
+              <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-center space-y-2">
+                <Check className="w-8 h-8 mx-auto text-emerald-600 dark:text-emerald-400" />
                 <p className="font-bold text-sm">Invitation Sent!</p>
-                <p className="text-xs text-green-200">
+                <p className="text-xs text-emerald-700 dark:text-emerald-300">
                   {invitingUser.full_name} has received an in-app collaboration notification.
                 </p>
               </div>
             ) : myHostedPosts.length === 0 ? (
               <div className="space-y-4">
-                <p className="text-[#A1AAB8]">
-                  You do not currently have any open opportunities to invite {invitingUser.full_name} into.
+                <p className="text-[var(--color-text-muted)]">
+                  You do not currently have any open events to invite {invitingUser.full_name} into.
                 </p>
                 <button
                   type="button"
                   onClick={() => {
                     setInvitingUser(null);
-                    // trigger create post
                   }}
-                  className="w-full py-2.5 rounded-xl bg-[#22C55E] text-black font-bold cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[var(--color-burgundy)] text-[#E5DED2] font-bold cursor-pointer"
                 >
-                  Create Opportunity First
+                  Create Event First
                 </button>
               </div>
             ) : (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-white mb-1">
-                    Select Opportunity *
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1">
+                    Select Event *
                   </label>
                   <select
                     value={selectedPostId}
                     onChange={(e) => setSelectedPostId(e.target.value)}
                     required
-                    className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-white text-xs focus:outline-none focus:border-[#22C55E]"
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                   >
                     {myHostedPosts.map(p => (
                       <option key={p.id} value={p.id}>{p.title}</option>
@@ -438,22 +437,22 @@ export const FindPeopleDirectory: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-white mb-1">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1">
                     Personalized Note (Optional)
                   </label>
                   <textarea
                     rows={3}
                     value={inviteNote}
                     onChange={(e) => setInviteNote(e.target.value)}
-                    placeholder="e.g. Would love to have your ROS2 / React skills on this project..."
-                    className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-white text-xs focus:outline-none focus:border-[#22C55E]"
+                    placeholder="e.g. Would love to have your collaboration on this project..."
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                   />
                 </div>
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
                     <Send className="w-3.5 h-3.5" />
                     Send Direct Invitation

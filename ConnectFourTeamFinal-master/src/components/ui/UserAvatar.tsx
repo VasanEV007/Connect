@@ -37,15 +37,15 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   };
 
   const roleIndicatorColors: Record<UserRole, string> = {
-    STUDENT: 'bg-[#22C55E]',
-    FACULTY: 'bg-amber-400',
-    ADMIN: 'bg-indigo-400',
+    STUDENT: 'bg-[#798DA6]',
+    FACULTY: 'bg-[#A16207]',
+    ADMIN: 'bg-[#490B1A]',
   };
 
   return (
     <div className="relative inline-flex shrink-0">
       <div
-        className={`${sizeClasses[size]} rounded-full bg-[#171C24] border border-[#27303D] text-[#F8FAFC] flex items-center justify-center font-mono tracking-wider select-none shadow-xs ${className}`}
+        className={`${sizeClasses[size]} rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-border)] text-[var(--color-text-main)] flex items-center justify-center font-mono tracking-wider select-none shadow-xs ${className}`}
         title={name}
         aria-label={name}
       >
@@ -54,7 +54,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
       {showRoleIndicator && role && (
         <span
-          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[#090B0F] ${roleIndicatorColors[role]}`}
+          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--color-page-bg)] ${roleIndicatorColors[role]}`}
           title={`Role: ${role}`}
         />
       )}

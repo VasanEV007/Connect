@@ -286,16 +286,16 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create Opportunity"
+      title="Create Event"
       description={`Posting as: ${currentUser?.full_name || 'Campus Member'} (${currentUser?.role === 'FACULTY' ? 'Official Faculty' : 'Student Organizer'})`}
       maxWidth="3xl"
     >
       <form onSubmit={handleSubmit} className="p-6 space-y-6 text-xs sm:text-sm">
         
-        {/* SECTION 1: Opportunity Category Selector */}
+        {/* SECTION 1: Event Category Selector */}
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#A1AAB8]">
-            Select Opportunity Category
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+            Select Event Category
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {isFaculty ? (
@@ -305,15 +305,15 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => handleCategoryChange('FACULTY_WORKSHOP')}
                   className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
                     category === 'FACULTY_WORKSHOP'
-                      ? 'border-[#22C55E] bg-[#22C55E]/10 text-[#22C55E] ring-1 ring-[#22C55E]/40'
-                      : 'border-[#27303D] bg-[#11151B] hover:bg-[#171C24] text-[#A1AAB8] hover:text-white'
+                      ? 'border-[var(--color-burgundy)] bg-[var(--color-burgundy)]/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] ring-1 ring-[var(--color-burgundy)]/50'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-bold text-white mb-0.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <div className="flex items-center gap-1.5 font-bold text-[var(--color-text-main)] mb-0.5">
+                    <GraduationCap className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                     Official Workshop
                   </div>
-                  <div className="text-[11px] font-normal text-[#A1AAB8]">Departmental Talks & Masterclasses</div>
+                  <div className="text-[11px] font-normal text-[var(--color-text-muted)]">Departmental Talks & Masterclasses</div>
                 </button>
 
                 <button
@@ -321,15 +321,15 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => handleCategoryChange('FACULTY_RESEARCH')}
                   className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
                     category === 'FACULTY_RESEARCH'
-                      ? 'border-[#22C55E] bg-[#22C55E]/10 text-[#22C55E] ring-1 ring-[#22C55E]/40'
-                      : 'border-[#27303D] bg-[#11151B] hover:bg-[#171C24] text-[#A1AAB8] hover:text-white'
+                      ? 'border-[var(--color-burgundy)] bg-[var(--color-burgundy)]/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] ring-1 ring-[var(--color-burgundy)]/50'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-bold text-white mb-0.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <div className="flex items-center gap-1.5 font-bold text-[var(--color-text-main)] mb-0.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                     Research Call
                   </div>
-                  <div className="text-[11px] font-normal text-[#A1AAB8]">Funded Projects & IEEE Papers</div>
+                  <div className="text-[11px] font-normal text-[var(--color-text-muted)]">Funded Projects & IEEE Papers</div>
                 </button>
 
                 <button
@@ -337,15 +337,15 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => handleCategoryChange('FACULTY_VOLUNTEER')}
                   className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
                     category === 'FACULTY_VOLUNTEER'
-                      ? 'border-[#22C55E] bg-[#22C55E]/10 text-[#22C55E] ring-1 ring-[#22C55E]/40'
-                      : 'border-[#27303D] bg-[#11151B] hover:bg-[#171C24] text-[#A1AAB8] hover:text-white'
+                      ? 'border-[var(--color-burgundy)] bg-[var(--color-burgundy)]/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] ring-1 ring-[var(--color-burgundy)]/50'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-bold text-white mb-0.5">
-                    <Users className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <div className="flex items-center gap-1.5 font-bold text-[var(--color-text-main)] mb-0.5">
+                    <Users className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                     Volunteer Desk
                   </div>
-                  <div className="text-[11px] font-normal text-[#A1AAB8]">Anokha & Conference Desks</div>
+                  <div className="text-[11px] font-normal text-[var(--color-text-muted)]">Anokha & Conference Desks</div>
                 </button>
               </>
             ) : (
@@ -355,15 +355,15 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => handleCategoryChange('STUDENT_CASUAL')}
                   className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
                     category === 'STUDENT_CASUAL'
-                      ? 'border-[#22C55E] bg-[#22C55E]/10 text-[#22C55E] ring-1 ring-[#22C55E]/40'
-                      : 'border-[#27303D] bg-[#11151B] hover:bg-[#171C24] text-[#A1AAB8] hover:text-white'
+                      ? 'border-[var(--color-burgundy)] bg-[var(--color-burgundy)]/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] ring-1 ring-[var(--color-burgundy)]/50'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-bold text-white mb-0.5">
-                    <Compass className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <div className="flex items-center gap-1.5 font-bold text-[var(--color-text-main)] mb-0.5">
+                    <Compass className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                     Casual & Sports
                   </div>
-                  <div className="text-[11px] font-normal text-[#A1AAB8]">Badminton, Football, Gaming & Casual Meetups</div>
+                  <div className="text-[11px] font-normal text-[var(--color-text-muted)]">Badminton, Football, Gaming & Casual Meetups</div>
                 </button>
 
                 <button
@@ -371,15 +371,15 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => handleCategoryChange('STUDENT_CREATIVE')}
                   className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
                     category === 'STUDENT_CREATIVE'
-                      ? 'border-[#22C55E] bg-[#22C55E]/10 text-[#22C55E] ring-1 ring-[#22C55E]/40'
-                      : 'border-[#27303D] bg-[#11151B] hover:bg-[#171C24] text-[#A1AAB8] hover:text-white'
+                      ? 'border-[var(--color-burgundy)] bg-[var(--color-burgundy)]/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] ring-1 ring-[var(--color-burgundy)]/50'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-bold text-white mb-0.5">
-                    <Palette className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <div className="flex items-center gap-1.5 font-bold text-[var(--color-text-main)] mb-0.5">
+                    <Palette className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                     Creative & Media
                   </div>
-                  <div className="text-[11px] font-normal text-[#A1AAB8]">Short Films, Photography, Music, Design</div>
+                  <div className="text-[11px] font-normal text-[var(--color-text-muted)]">Short Films, Photography, Music, Design</div>
                 </button>
 
                 <button
@@ -387,15 +387,15 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => handleCategoryChange('CARPOOL')}
                   className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
                     category === 'CARPOOL'
-                      ? 'border-[#22C55E] bg-[#22C55E]/10 text-[#22C55E] ring-1 ring-[#22C55E]/40'
-                      : 'border-[#27303D] bg-[#11151B] hover:bg-[#171C24] text-[#A1AAB8] hover:text-white'
+                      ? 'border-[var(--color-burgundy)] bg-[var(--color-burgundy)]/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] ring-1 ring-[var(--color-burgundy)]/50'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-bold text-white mb-0.5">
-                    <Car className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <div className="flex items-center gap-1.5 font-bold text-[var(--color-text-main)] mb-0.5">
+                    <Car className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                     Carpool & Travel
                   </div>
-                  <div className="text-[11px] font-normal text-[#A1AAB8]">Railway, Airport & City Rides</div>
+                  <div className="text-[11px] font-normal text-[var(--color-text-muted)]">Railway, Airport & City Rides</div>
                 </button>
               </>
             )}
@@ -405,7 +405,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
         {/* SECTION 2: Common Title & Description with Category-specific labels & placeholders */}
         <div className="space-y-4">
           <Input
-            label={category === 'CARPOOL' ? 'Travel Opportunity Title *' : 'Opportunity Title *'}
+            label={category === 'CARPOOL' ? 'Travel Event Title *' : 'Event Title *'}
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -433,9 +433,9 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
 
         {/* SECTION 3: Category-Specific Carpool & Transit Logistics */}
         {category === 'CARPOOL' && (
-          <div className="p-4 rounded-xl border border-[#27303D] bg-[#11151B] space-y-4">
-            <div className="font-bold text-xs text-[#22C55E] flex items-center gap-2">
-              <Car className="w-4 h-4 text-[#22C55E]" />
+          <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] space-y-4">
+            <div className="font-bold text-xs text-[var(--color-text-main)] flex items-center gap-2">
+              <Car className="w-4 h-4 text-[var(--color-text-subtle)]" />
               <span>Carpool & Transit Logistics</span>
             </div>
 
@@ -480,8 +480,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
         )}
 
         {/* SECTION 4: Schedule, Capacity & Joining Mode */}
-        <div className="p-4 rounded-xl border border-[#27303D] bg-[#11151B] space-y-4">
-          <div className="font-bold text-xs text-white">
+        <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] space-y-4">
+          <div className="font-bold text-xs text-[var(--color-text-main)]">
             {category === 'CARPOOL' ? 'Travel Schedule & Available Seats' : 'Schedule & Capacity'}
           </div>
 
@@ -514,9 +514,9 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#27303D]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[var(--color-border)]">
             <div>
-              <label className="block text-xs font-semibold text-[#A1AAB8] mb-1.5">
+              <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-1.5">
                 Joining Preference
               </label>
               <div className="flex gap-2">
@@ -525,8 +525,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => setJoinMode('UNLOCKED')}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     joinMode === 'UNLOCKED'
-                      ? 'bg-[#22C55E] text-black font-bold shadow-xs'
-                      : 'bg-[#171C24] text-[#A1AAB8] border border-[#27303D] hover:text-white'
+                      ? 'bg-[var(--color-burgundy)] text-[#E5DED2] font-bold shadow-xs'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
                   <Unlock className="w-3.5 h-3.5" />
@@ -537,8 +537,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                   onClick={() => setJoinMode('LOCKED')}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     joinMode === 'LOCKED'
-                      ? 'bg-[#22C55E] text-black font-bold shadow-xs'
-                      : 'bg-[#171C24] text-[#A1AAB8] border border-[#27303D] hover:text-white'
+                      ? 'bg-[var(--color-burgundy)] text-[#E5DED2] font-bold shadow-xs'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text-main)]'
                   }`}
                 >
                   <Lock className="w-3.5 h-3.5" />
@@ -562,19 +562,19 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
           </div>
         </div>
 
-        {/* SECTION 5: Venue (Shown for all NON-carpool opportunities) */}
+        {/* SECTION 5: Venue (Shown for all NON-carpool events) */}
         {category !== 'CARPOOL' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold text-[#A1AAB8]">
+              <label className="block text-xs font-semibold text-[var(--color-text-muted)]">
                 Campus Landmark / Venue *
               </label>
               <button
                 type="button"
                 onClick={() => setIsMapModalOpen(true)}
-                className="text-xs text-[#22C55E] font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                className="text-xs text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold flex items-center gap-1 hover:underline cursor-pointer"
               >
-                <MapPin className="w-3.5 h-3.5" />
+                <MapPin className="w-3.5 h-3.5 text-[var(--color-text-subtle)]" />
                 Pick Landmark from Campus Map
               </button>
             </div>
@@ -596,7 +596,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
         {/* SECTION 6: Category-Specific Tags / Skills (NOT shown for Carpool) */}
         {category !== 'CARPOOL' && (
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-[#A1AAB8]">
+            <label className="block text-xs font-semibold text-[var(--color-text-muted)]">
               {getSkillsConfig().label}
             </label>
             <div className="flex gap-2">
@@ -606,20 +606,20 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(); } }}
                 placeholder={getSkillsConfig().placeholder}
-                className="flex-1 px-3.5 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-white text-xs placeholder:text-[#64748B] focus:outline-none focus:border-[#22C55E]"
+                className="flex-1 px-3.5 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-burgundy)]"
               />
               <Button variant="secondary" size="sm" onClick={handleAddSkill}>
                 Add
               </Button>
             </div>
-            <p className="text-[11px] text-[#A1AAB8]">{getSkillsConfig().helper}</p>
+            <p className="text-[11px] text-[var(--color-text-muted)]">{getSkillsConfig().helper}</p>
 
             {skills.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {skills.map((s, idx) => (
                   <span
                     key={idx}
-                    className="px-2.5 py-1 rounded-full bg-[#22C55E]/10 text-[#22C55E] text-xs font-semibold flex items-center gap-1 border border-[#22C55E]/30"
+                    className="px-2.5 py-1 rounded-full bg-[var(--color-burgundy)]/10 text-[var(--color-burgundy)] dark:text-[#E5DED2] text-xs font-semibold flex items-center gap-1 border border-[var(--color-burgundy)]/30"
                   >
                     {s}
                     <button type="button" onClick={() => handleRemoveSkill(s)} className="hover:text-rose-400 cursor-pointer">
@@ -634,18 +634,18 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
 
         {/* SECTION 7: Faculty OD & Research Perks (Only for Official Faculty postings) */}
         {isFaculty && category !== 'CARPOOL' && (
-          <div className="p-4 rounded-xl border border-[#27303D] bg-[#11151B] space-y-3">
+          <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-[#22C55E] flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#22C55E]" />
+              <span className="font-bold text-xs text-[var(--color-text-main)] flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-[var(--color-text-subtle)]" />
                 Institutional On-Duty (OD) Regularization
               </span>
-              <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-[#A1AAB8] hover:text-white">
+              <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]">
                 <input
                   type="checkbox"
                   checked={odAvailable}
                   onChange={(e) => setOdAvailable(e.target.checked)}
-                  className="rounded text-[#22C55E] focus:ring-[#22C55E] bg-[#0E121A] border-[#27303D]"
+                  className="rounded text-[var(--color-burgundy)] focus:ring-[var(--color-burgundy)] bg-[var(--color-surface)] border-[var(--color-border)]"
                 />
                 <span>Sanction Official OD</span>
               </label>
@@ -672,7 +672,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
             )}
 
             {category === 'FACULTY_RESEARCH' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#27303D]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--color-border)]">
                 <Input
                   label="Research Perks & Co-Authorship"
                   value={researchPerks}
@@ -692,15 +692,15 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
           </div>
         )}
 
-        {/* SECTION 8: Department & Batch Whitelist (Only for non-travel opportunities) */}
+        {/* SECTION 8: Department & Batch Whitelist (Only for non-travel events) */}
         {category !== 'CARPOOL' && (
-          <div className="space-y-3 p-4 rounded-xl border border-[#27303D] bg-[#11151B]">
+          <div className="space-y-3 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-[#A1AAB8]">
+                <label className="block text-xs font-semibold text-[var(--color-text-muted)]">
                   Department Eligibility Whitelist
                 </label>
-                <span className="text-[11px] text-[#64748B]">
+                <span className="text-[11px] text-[var(--color-text-muted)]">
                   {selectedDepts.includes('ANY') ? 'Open to all departments' : `${selectedDepts.length} selected`}
                 </span>
               </div>
@@ -724,8 +724,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                     }}
                     className={`px-3 py-1 rounded-full font-semibold transition-all cursor-pointer ${
                       selectedDepts.includes(dept)
-                        ? 'bg-[#22C55E]/15 border border-[#22C55E] text-[#22C55E]'
-                        : 'bg-[#171C24] hover:bg-[#202733] text-[#A1AAB8] hover:text-white border border-[#27303D]'
+                        ? 'bg-[var(--color-burgundy)]/15 border border-[var(--color-burgundy)] text-[var(--color-burgundy)] dark:text-[#E5DED2]'
+                        : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] border border-[var(--color-border)]'
                     }`}
                   >
                     {dept}
@@ -734,8 +734,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-2 border-t border-[#27303D]">
-              <label className="block text-xs font-semibold text-[#A1AAB8]">
+            <div className="space-y-1.5 pt-2 border-t border-[var(--color-border)]">
+              <label className="block text-xs font-semibold text-[var(--color-text-muted)]">
                 Eligible Joining Batches
               </label>
               <div className="flex flex-wrap gap-1.5 text-xs">
@@ -754,8 +754,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                     }}
                     className={`px-3 py-1 rounded-full font-semibold transition-all cursor-pointer ${
                       selectedYears.includes(yr)
-                        ? 'bg-[#22C55E]/15 border border-[#22C55E] text-[#22C55E]'
-                        : 'bg-[#171C24] hover:bg-[#202733] text-[#A1AAB8] hover:text-white border border-[#27303D]'
+                        ? 'bg-[var(--color-burgundy)]/15 border border-[var(--color-burgundy)] text-[var(--color-burgundy)] dark:text-[#E5DED2]'
+                        : 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] border border-[var(--color-border)]'
                     }`}
                   >
                     {yr} Batch
@@ -767,7 +767,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
         )}
 
         {/* Modal Submit Footer */}
-        <div className="pt-4 border-t border-[#27303D] flex items-center justify-end gap-2">
+        <div className="pt-4 border-t border-[var(--color-border)] flex items-center justify-end gap-2">
           <Button variant="outline" size="md" onClick={onClose}>
             Cancel
           </Button>
@@ -779,7 +779,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
             isLoading={isSubmitting}
             leftIcon={<Plus className="w-4 h-4" />}
           >
-            Publish Opportunity
+            Publish Event
           </Button>
         </div>
 

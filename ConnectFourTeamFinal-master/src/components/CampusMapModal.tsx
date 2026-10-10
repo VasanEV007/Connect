@@ -44,25 +44,25 @@ export const CampusMapModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl h-[90vh] max-h-[850px] bg-[#0D1017] rounded-2xl shadow-2xl border border-[#1E2433] flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-5xl h-[90vh] max-h-[850px] bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] flex flex-col overflow-hidden text-[var(--color-text-main)]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E2433] bg-[#0A0D14]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-surface-card)]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-burgundy/15 text-[var(--color-burgundy)] border border-[var(--color-burgundy)]/30 flex items-center justify-center font-bold">
               <MapPin className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-white">
+                <h2 className="text-lg font-bold text-[var(--color-text-main)]">
                   Amrita Ettimadai Campus Navigator
                 </h2>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-burgundy/10 text-[var(--color-burgundy)] border border-[var(--color-burgundy)]/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-burgundy)]" />
                   Coimbatore Main Campus
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 {selectionMode ? 'Click on a landmark to set event venue location' : 'Interactive spatial view of campus landmarks and active event spots'}
               </p>
             </div>
@@ -70,7 +70,7 @@ export const CampusMapModal: React.FC<Props> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#131722] transition-colors"
+            className="p-2 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -80,18 +80,18 @@ export const CampusMapModal: React.FC<Props> = ({
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           
           {/* Main Visual Map Area */}
-          <div className="flex-1 relative bg-[#05070A] overflow-hidden flex flex-col">
+          <div className="flex-1 relative bg-[var(--color-surface)] overflow-hidden flex flex-col">
             
             {/* Map Filter Chips */}
-            <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-1.5 p-1.5 bg-[#0D1017]/90 backdrop-blur rounded-xl border border-[#1E2433] shadow-sm text-xs">
+            <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-1.5 p-1.5 bg-[var(--color-surface-card)]/90 backdrop-blur rounded-xl border border-[var(--color-border)] shadow-sm text-xs">
               {['ALL', 'ACADEMIC', 'HALL', 'SPORTS', 'FOOD', 'GATE'].map(cat => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategoryFilter(cat)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                     activeCategoryFilter === cat
-                      ? 'bg-[#22C55E]/10 border border-[#22C55E] text-[#22C55E]'
-                      : 'text-slate-400 hover:text-white bg-[#131722] border border-[#232B3C]'
+                      ? 'bg-[var(--color-burgundy)] text-[#E5DED2] border border-[var(--color-burgundy)]'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-surface)] border border-[var(--color-border)]'
                   }`}
                 >
                   {cat === 'ALL' ? 'All Zones' : cat}
@@ -101,7 +101,7 @@ export const CampusMapModal: React.FC<Props> = ({
 
             {/* Interactive Campus SVG/Canvas Canvas */}
             <div className="flex-1 relative w-full h-full p-6 flex items-center justify-center">
-              <div className="relative w-full max-w-[720px] aspect-[4/3] bg-[#07090E] rounded-2xl border-2 border-dashed border-[#1E2433] overflow-hidden shadow-inner">
+              <div className="relative w-full max-w-[720px] aspect-[4/3] bg-[var(--color-surface-card)] rounded-2xl border-2 border-dashed border-[var(--color-border)] overflow-hidden shadow-inner">
                 
                 {/* SVG Visual Campus Pathways and Layout */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" xmlns="http://www.w3.org/2000/svg">
@@ -118,8 +118,8 @@ export const CampusMapModal: React.FC<Props> = ({
                 </svg>
 
                 {/* Campus North / South Orientation Indicator */}
-                <div className="absolute bottom-3 left-3 bg-[#0D1017]/90 backdrop-blur px-2.5 py-1 rounded-lg border border-[#1E2433] text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
+                <div className="absolute bottom-3 left-3 bg-[var(--color-surface-card)]/90 backdrop-blur px-2.5 py-1 rounded-lg border border-[var(--color-border)] text-[11px] font-mono text-[var(--color-text-muted)] flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[var(--color-burgundy)] animate-pulse"></span>
                   Ettimadai Valley • 10.9015° N, 76.9012° E
                 </div>
 
@@ -139,24 +139,24 @@ export const CampusMapModal: React.FC<Props> = ({
                         left: `${lm.x_percent}%`,
                         top: `${lm.y_percent}%`,
                       }}
-                      className={`absolute -translate-x-1/2 -translate-y-1/2 group transition-all duration-300 z-20 focus:outline-none`}
+                      className={`absolute -translate-x-1/2 -translate-y-1/2 group transition-all duration-300 z-20 focus:outline-none cursor-pointer`}
                     >
                       {/* Pulse circle if has events */}
                       {landmarkEventsCount > 0 && (
-                        <span className="absolute -inset-2 rounded-full bg-[#22C55E]/30 animate-ping pointer-events-none"></span>
+                        <span className="absolute -inset-2 rounded-full bg-burgundy/30 animate-ping pointer-events-none"></span>
                       )}
 
                       <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl shadow-md font-semibold text-xs transition-transform ${
                         isSelected
-                          ? 'bg-[#22C55E] text-black font-bold scale-110 ring-4 ring-green-500/30 z-30'
-                          : 'bg-[#131722] text-slate-200 hover:scale-105 border border-[#232B3C]'
+                          ? 'bg-[var(--color-burgundy)] text-[#E5DED2] font-bold scale-110 ring-4 ring-burgundy/30 z-30'
+                          : 'bg-[var(--color-surface-card)] text-[var(--color-text-main)] hover:scale-105 border border-[var(--color-border)]'
                       }`}>
-                        <MapPin className={`w-3.5 h-3.5 ${isSelected ? 'text-black' : 'text-[#22C55E]'}`} />
+                        <MapPin className={`w-3.5 h-3.5 ${isSelected ? 'text-[#E5DED2]' : 'text-[var(--color-burgundy)]'}`} />
                         <span>{lm.short_code}</span>
 
                         {landmarkEventsCount > 0 && (
                           <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                            isSelected ? 'bg-black/20 text-black font-bold' : 'bg-[#22C55E]/20 text-[#22C55E]'
+                            isSelected ? 'bg-black/20 text-[#E5DED2] font-bold' : 'bg-burgundy/20 text-[var(--color-burgundy)]'
                           }`}>
                             {landmarkEventsCount}
                           </span>
@@ -164,7 +164,7 @@ export const CampusMapModal: React.FC<Props> = ({
                       </div>
 
                       {/* Tooltip on hover */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block whitespace-nowrap bg-[#0D1017] border border-[#1E2433] text-white text-[11px] px-2 py-1 rounded shadow pointer-events-none z-40">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block whitespace-nowrap bg-[var(--color-surface-card)] border border-[var(--color-border)] text-[var(--color-text-main)] text-[11px] px-2 py-1 rounded shadow pointer-events-none z-40">
                         {lm.name}
                       </div>
                     </button>
@@ -175,37 +175,37 @@ export const CampusMapModal: React.FC<Props> = ({
           </div>
 
           {/* Sidebar Landmark Details Panel */}
-          <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-[#1E2433] bg-[#0D1017] p-5 flex flex-col justify-between overflow-y-auto">
+          <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 flex flex-col justify-between overflow-y-auto">
             <div>
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-burgundy/15 border border-[var(--color-burgundy)]/30 text-[var(--color-burgundy)]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-burgundy)]" />
                     {selectedLandmark.category} ZONE
                   </span>
-                  <h3 className="text-lg font-bold text-white mt-1.5">
+                  <h3 className="text-lg font-bold text-[var(--color-text-main)] mt-1.5">
                     {selectedLandmark.name}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Landmark Code: <code className="font-mono font-semibold text-[#22C55E]">{selectedLandmark.short_code}</code>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    Landmark Code: <code className="font-mono font-semibold text-[var(--color-burgundy)]">{selectedLandmark.short_code}</code>
                   </p>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-400 leading-relaxed mb-4">
+              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed mb-4">
                 {selectedLandmark.description}
               </p>
 
               {/* Popular For Tags */}
               <div className="mb-4">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block mb-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] block mb-1.5">
                   Frequent Activities
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedLandmark.popular_for.map((tag, idx) => (
                     <span 
                       key={idx}
-                      className="px-2.5 py-1 rounded-full bg-[#131722] border border-[#232B3C] text-slate-300 text-xs"
+                      className="px-2.5 py-1 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-xs"
                     >
                       {tag}
                     </span>
@@ -214,16 +214,16 @@ export const CampusMapModal: React.FC<Props> = ({
               </div>
 
               {/* Active Events at this Landmark */}
-              <div className="mb-4 border-t border-[#1E2433] pt-3">
+              <div className="mb-4 border-t border-[var(--color-border)] pt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <label className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[var(--color-burgundy)]" />
                     Happening Here ({activePostsForLandmark.length})
                   </label>
                 </div>
 
                 {activePostsForLandmark.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic p-3 bg-[#07090E] rounded-xl border border-[#1E2433]">
+                  <p className="text-xs text-[var(--color-text-muted)] italic p-3 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]">
                     No active sessions currently scheduled at this spot.
                   </p>
                 ) : (
@@ -235,14 +235,14 @@ export const CampusMapModal: React.FC<Props> = ({
                           setSelectedPostForDetail(post);
                           onClose();
                         }}
-                        className="p-2.5 rounded-xl border border-[#1E2433] bg-[#07090E] hover:border-[#22C55E]/50 cursor-pointer transition-colors text-xs"
+                        className="p-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-burgundy)]/50 cursor-pointer transition-colors text-xs"
                       >
-                        <div className="font-semibold text-white line-clamp-1 hover:text-[#22C55E]">
+                        <div className="font-semibold text-[var(--color-text-main)] line-clamp-1 hover:text-[var(--color-burgundy)]">
                           {post.title}
                         </div>
-                        <div className="text-[11px] text-slate-400 flex items-center justify-between mt-1">
+                        <div className="text-[11px] text-[var(--color-text-muted)] flex items-center justify-between mt-1">
                           <span>{post.host_name}</span>
-                          <span className="text-[#22C55E] font-medium flex items-center gap-0.5">
+                          <span className="text-[var(--color-burgundy)] font-medium flex items-center gap-0.5">
                             Details <ArrowRight className="w-3 h-3" />
                           </span>
                         </div>
@@ -254,14 +254,14 @@ export const CampusMapModal: React.FC<Props> = ({
             </div>
 
             {/* Actions */}
-            <div className="pt-4 border-t border-[#1E2433] flex gap-2">
+            <div className="pt-4 border-t border-[var(--color-border)] flex gap-2">
               {selectionMode ? (
                 <button
                   onClick={() => {
                     if (onSelectLandmark) onSelectLandmark(selectedLandmark);
                     onClose();
                   }}
-                  className="flex-1 py-2.5 px-4 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-green-500/20"
+                  className="flex-1 py-2.5 px-4 rounded-full bg-[var(--color-burgundy)] hover:opacity-95 text-[#E5DED2] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
                 >
                   <MapPin className="w-4 h-4" />
                   Select "{selectedLandmark.short_code}" as Venue
@@ -269,10 +269,10 @@ export const CampusMapModal: React.FC<Props> = ({
               ) : (
                 <button
                   onClick={() => {
-                    setActiveTab('feed');
+                    setActiveTab('events');
                     onClose();
                   }}
-                  className="flex-1 py-2.5 px-4 rounded-full bg-[#131722] hover:bg-[#1A202F] text-white border border-[#232B3C] font-semibold text-xs flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 px-4 rounded-full bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-main)] border border-[var(--color-border)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   Explore All Campus Events
                 </button>

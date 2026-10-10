@@ -57,7 +57,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -66,21 +66,21 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div 
         ref={modalRef}
-        className={`relative w-full ${maxWidthStyles} bg-[#0D1017] rounded-2xl shadow-2xl border border-[#1E2433] flex flex-col max-h-[92vh] overflow-hidden text-white transition-all`}
+        className={`relative w-full ${maxWidthStyles} bg-[var(--color-surface-elevated)] rounded-2xl shadow-2xl border border-[var(--color-border)] flex flex-col max-h-[92vh] overflow-hidden text-[var(--color-text-main)] transition-colors`}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-start justify-between px-6 py-4 border-b border-[#1E2433] bg-[#0A0D14]">
+          <div className="flex items-start justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
             <div>
               {typeof title === 'string' ? (
-                <h2 className="text-base sm:text-lg font-bold text-white">
+                <h2 className="text-base sm:text-lg font-bold text-[var(--color-text-main)]">
                   {title}
                 </h2>
               ) : (
                 title
               )}
               {description && (
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   {description}
                 </p>
               )}
@@ -91,7 +91,7 @@ export const Modal: React.FC<ModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#161B26] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

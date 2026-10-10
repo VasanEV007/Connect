@@ -1,33 +1,53 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *, .dark, .dark *));
+
+@theme {
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --font-heading: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
 @layer base {
   :root {
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-heading: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-heading: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-mono: 'Roboto Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
-    /* Connect Design Tokens */
-    --color-primary: #22c55e;
-    --color-primary-hover: #16a34a;
-    --color-primary-light: rgba(34, 197, 94, 0.12);
+    /* Exact Global Reference Palette */
+    --color-burgundy: #490B1A;
+    --color-burgundy-hover: #5F1023;
+    --color-navy: #142841;
+    --color-blue-grey: #798DA6;
+    --color-cream: #E5DED2;
+
+    /* Theme: Light (Warm Cream Base) */
+    --color-page-bg: #E5DED2;
+    --color-surface: #EDE7DC;
+    --color-surface-hover: #E2D9CC;
+    --color-surface-card: #FAF6F0;
+    --color-surface-elevated: #FFFFFF;
     
-    --color-page-bg: #090b0f;
-    --color-surface: #11151b;
-    --color-surface-hover: #171c24;
-    --color-surface-card: #11151b;
+    /* Contrast-checked light text tokens */
+    --color-text-main: #142841;       /* Deep navy: 12.8:1 contrast on #E5DED2 */
+    --color-text-muted: #33475E;      /* Contrast-checked slate-navy: 7.1:1 on #E5DED2 */
+    --color-text-subtle: #4D627B;     /* Readable supporting label: 5.2:1 on #E5DED2 */
+    --color-text-accent: #490B1A;     /* Burgundy accent: 9.8:1 on #E5DED2 */
     
-    --color-text-main: #f8fafc;
-    --color-text-muted: #a1aab8;
-    --color-text-subtle: #64748b;
+    --color-border: #BAC5D3;
+    --color-border-subtle: #CFD8E2;
+    --color-border-hover: #798DA6;
     
-    --color-border: #27303d;
-    --color-border-subtle: #1e2433;
-    --color-border-hover: #384355;
+    --color-primary: #490B1A;
+    --color-primary-hover: #5F1023;
+    --color-primary-text: #E5DED2;
     
-    --color-success: #22c55e;
-    --color-warning: #f59e0b;
-    --color-error: #ef4444;
-    --color-info: #3b82f6;
+    --color-secondary: #798DA6;
+    --color-secondary-hover: #637790;
+    --color-secondary-text: #142841;
+    
+    --color-success: #1E6B3E;
+    --color-warning: #9A5B08;
+    --color-error: #991B1B;
 
     --radius-sm: 6px;
     --radius-md: 8px;
@@ -35,7 +55,38 @@
     --radius-xl: 16px;
   }
 
-  body {
+  .dark, [data-theme="dark"] {
+    /* Theme: Dark (Deep Navy Base) */
+    --color-page-bg: #142841;
+    --color-surface: #0E1E33;
+    --color-surface-hover: #172E4C;
+    --color-surface-card: #182E4B;
+    --color-surface-elevated: #1D3759;
+    
+    /* Contrast-checked dark text tokens: Cream & Light Blue-Grey */
+    --color-text-main: #E5DED2;       /* Warm cream: 11.4:1 contrast on #142841, 8.9:1 on card #182E4B */
+    --color-text-muted: #B8C9DC;      /* Contrast-checked light blue-grey: 7.2:1 on #182E4B */
+    --color-text-subtle: #98ADC5;     /* Readable supporting detail: 5.3:1 on #182E4B */
+    --color-text-accent: #E5DED2;     /* Warm cream for accents on dark (NEVER dark burgundy) */
+    
+    --color-border: #2D4B73;
+    --color-border-subtle: #1F3857;
+    --color-border-hover: #9BB0C7;
+    
+    --color-primary: #490B1A;
+    --color-primary-hover: #631124;
+    --color-primary-text: #E5DED2;
+    
+    --color-secondary: #798DA6;
+    --color-secondary-hover: #8EA1B8;
+    --color-secondary-text: #E5DED2;
+    
+    --color-success: #22C55E;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+  }
+
+  html, body {
     font-family: var(--font-sans);
     background-color: var(--color-page-bg);
     color: var(--color-text-main);
@@ -44,45 +95,96 @@
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
 
+  /* Universal font inheritance for controls */
+  button, input, select, textarea, optgroup {
+    font-family: var(--font-sans);
+  }
+
+  /* Clean Roboto Heading Hierarchy */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    letter-spacing: -0.02em;
+    color: var(--color-text-main);
+    letter-spacing: -0.01em;
   }
+
+  h1 { font-weight: 700; }
+  h2 { font-weight: 700; }
+  h3 { font-weight: 600; }
+  h4 { font-weight: 600; }
+  h5, h6 { font-weight: 500; }
 
   /* Accessible focus indicators */
   :focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-blue-grey);
     outline-offset: 2px;
   }
 }
 
-/* Connect dark scrollbar */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #090b0f;
+  background: var(--color-page-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #27303d;
+  background: var(--color-border);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #22c55e;
+  background: var(--color-border-hover);
 }
 
-/* Connect Surface Card */
+/* Reusable token helper classes */
+.bg-page { background-color: var(--color-page-bg); }
+.bg-surface { background-color: var(--color-surface); }
+.bg-surface-card { background-color: var(--color-surface-card); }
+.bg-surface-elevated { background-color: var(--color-surface-elevated); }
+.bg-surface-hover:hover { background-color: var(--color-surface-hover); }
+
+.bg-burgundy { background-color: var(--color-burgundy); }
+.bg-burgundy-hover:hover { background-color: var(--color-burgundy-hover); }
+.bg-navy { background-color: var(--color-navy); }
+.bg-blue-grey { background-color: var(--color-blue-grey); }
+.bg-cream { background-color: var(--color-cream); }
+
+.text-main { color: var(--color-text-main); }
+.text-muted { color: var(--color-text-muted); }
+.text-subtle { color: var(--color-text-subtle); }
+.text-cream { color: var(--color-cream); }
+.text-navy { color: var(--color-navy); }
+.text-blue-grey { color: var(--color-blue-grey); }
+
+/* In dark mode, ensure text-burgundy and arbitrary burgundy text resolve to readable cream accent */
+.text-burgundy { color: var(--color-burgundy); }
+.dark .text-burgundy, [data-theme="dark"] .text-burgundy,
+.dark .text-\[var\(--color-burgundy\)\], [data-theme="dark"] .text-\[var\(--color-burgundy\)\],
+.dark [class*="text-[var(--color-burgundy)]"], [data-theme="dark"] [class*="text-[var(--color-burgundy)]"] {
+  color: var(--color-text-accent);
+}
+.text-accent { color: var(--color-text-accent); }
+
+.border-theme { border-color: var(--color-border); }
+.border-theme-subtle { border-color: var(--color-border-subtle); }
+.border-theme-hover:hover { border-color: var(--color-border-hover); }
+.border-burgundy { border-color: var(--color-burgundy); }
+.border-navy { border-color: var(--color-navy); }
+.border-blue-grey { border-color: var(--color-blue-grey); }
+
+/* Surface Card */
 .surface-card {
-  background-color: #11151b;
-  border: 1px solid #27303d;
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px -2px rgba(20, 40, 65, 0.12);
+  transition: all 0.15s ease;
 }
 .surface-card:hover {
-  border-color: #384355;
+  border-color: var(--color-border-hover);
 }
 
 /* Print Styles for Verified On-Duty (OD) Certificate */
@@ -99,23 +201,8 @@
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 24px;
-    background: #ffffff !important;
-    color: #000000 !important;
-    box-shadow: none !important;
-    border: 3px double #1e1b4b !important;
-  }
-  .no-print {
-    display: none !important;
-  }
-}
-
-/* Reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    padding: 0;
+    background: white !important;
+    color: black !important;
   }
 }

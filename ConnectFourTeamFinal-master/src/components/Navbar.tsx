@@ -8,16 +8,17 @@ import {
   Plus, 
   Users, 
   Calendar, 
-  FolderCheck, 
+  CalendarDays,
+  ClipboardList, 
   GraduationCap, 
-  Sparkles,
   ChevronDown,
   Menu,
   X,
   LogOut,
   User,
   MapPin,
-  ShieldCheck
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface Props {
@@ -37,7 +38,9 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
     setIsMapModalOpen, 
     setIsAuthModalOpen,
     setAuthModalMode,
-    setIsProfileModalOpen
+    setIsProfileModalOpen,
+    theme,
+    toggleTheme
   } = useApp();
 
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -77,15 +80,15 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
     : [];
   const pendingFacultyCount = applications.filter(a => facultyCallIds.includes(a.post_id) && a.status === 'PENDING').length;
 
-  // Build navigation items with role-aware filtering:
-  // Faculty Portal is visible ONLY to authorized faculty/admin accounts.
+  // Build navigation items in exact required order:
+  // 1. Events, 2. Calendar, 3. My Activities, 4. Find People (+ Faculty Portal if authorized)
   const isFacultyAuthorized = currentUser ? canAccessFacultyPortal(currentUser) : false;
 
   const navItems: { tab: NavigationTab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { tab: 'opportunities', label: 'Opportunities', icon: <Sparkles className="w-4 h-4" /> },
-    { tab: 'find-people', label: 'Find People', icon: <Users className="w-4 h-4" /> },
+    { tab: 'events', label: 'Events', icon: <CalendarDays className="w-4 h-4" /> },
     { tab: 'calendar', label: 'Calendar', icon: <Calendar className="w-4 h-4" /> },
-    { tab: 'my-activities', label: 'My Activities', icon: <FolderCheck className="w-4 h-4" /> },
+    { tab: 'my-activities', label: 'My Activities', icon: <ClipboardList className="w-4 h-4" /> },
+    { tab: 'find-people', label: 'Find People', icon: <Users className="w-4 h-4" /> },
   ];
 
   // Strictly append Faculty Portal ONLY when authorized
@@ -98,7 +101,7 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
     });
   }
 
-  const handlePostOpportunityClick = () => {
+  const handlePostEventClick = () => {
     if (!currentUser) {
       setAuthModalMode('LOGIN');
       setIsAuthModalOpen(true);
@@ -108,41 +111,42 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#090B0F] border-b border-[#27303D] transition-colors select-none">
+    <header className="sticky top-0 z-40 bg-[var(--color-surface)] border-b border-[var(--color-border)] transition-colors duration-150 select-none shadow-xs">
       {/* Main Header Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-3">
           
           {/* Brand Logo - Connect */}
           <div 
-            onClick={() => { setActiveTab('opportunities'); setIsMobileMenuOpen(false); }}
+            onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }}
             className="cursor-pointer group shrink-0"
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter') setActiveTab('opportunities'); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') setActiveTab('events'); }}
           >
             <Logo size="md" showCampusTag={true} />
           </div>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links: 1. Events, 2. Calendar, 3. My Activities, 4. Find People */}
           <nav className="hidden lg:flex items-center gap-1.5" aria-label="Main Navigation">
             {navItems.map((item) => {
-              const isActive = activeTab === item.tab || (item.tab === 'opportunities' && activeTab === 'feed');
+              const isActive = activeTab === item.tab || 
+                (item.tab === 'events' && (activeTab === 'opportunities' || activeTab === 'feed' || activeTab === 'carpool'));
               return (
                 <button
                   key={item.tab}
                   onClick={() => setActiveTab(item.tab)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer relative ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer relative ${
                     isActive
-                      ? 'bg-[#171C24] text-[#F8FAFC] font-semibold border border-[#27303D] shadow-xs'
-                      : 'text-[#A1AAB8] hover:text-white hover:bg-[#11151B]'
+                      ? 'bg-[var(--color-primary)] text-[var(--color-primary-text)] border border-[#798DA6]/40 shadow-xs'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)]'
                   }`}
                 >
                   {item.icon}
                   <span>{item.label}</span>
                   {item.badge && item.badge > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white">
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#490B1A] text-[#E5DED2] border border-[#798DA6]/40">
                       {item.badge}
                     </span>
                   )}
@@ -151,38 +155,52 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
             })}
           </nav>
 
-          {/* Right Action Icons & Real User Account Menu */}
+          {/* Right Action Icons & Controls */}
           <div className="flex items-center gap-2">
             
-            {/* Create Opportunity Action */}
+            {/* Create Event Action */}
             <button
-              onClick={handlePostOpportunityClick}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#22C55E] hover:bg-[#16A34A] text-black text-xs font-bold shadow-md shadow-green-500/20 transition-all cursor-pointer"
+              onClick={handlePostEventClick}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-text)] text-xs font-bold border border-[#798DA6]/40 shadow-xs transition-all cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Create Opportunity</span>
+              <span>Create Event</span>
+            </button>
+
+            {/* Dark / Light Mode Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] hover:border-[var(--color-blue-grey)] text-[var(--color-text-main)] transition-colors cursor-pointer"
+              title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-[#E5DED2]" />
+              ) : (
+                <Moon className="w-4 h-4 text-[#142841]" />
+              )}
             </button>
 
             {/* Campus Navigator Map */}
             <button
               onClick={() => setIsMapModalOpen(true)}
-              className="p-2 rounded-lg border border-[#27303D] bg-[#11151B] hover:border-[#384355] hover:text-[#22C55E] text-[#A1AAB8] relative transition-colors cursor-pointer"
+              className="p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] hover:border-[var(--color-blue-grey)] text-[var(--color-text-main)] relative transition-colors cursor-pointer"
               title="Campus Navigator"
               aria-label="Campus Navigator"
             >
-              <MapPin className="w-4 h-4" />
+              <MapPin className="w-4 h-4 text-[var(--color-text-muted)]" />
             </button>
 
             {/* Notification Bell */}
             <button
               onClick={onOpenNotifications}
-              className="p-2 rounded-lg border border-[#27303D] bg-[#11151B] hover:border-[#384355] hover:text-white text-[#A1AAB8] relative transition-colors cursor-pointer"
+              className="p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] hover:border-[var(--color-blue-grey)] text-[var(--color-text-main)] relative transition-colors cursor-pointer"
               title="Notifications"
               aria-label={`Notifications, ${unreadCount} unread`}
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4 text-[var(--color-text-muted)]" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#22C55E] ring-2 ring-[#090B0F]"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#490B1A] ring-2 ring-[var(--color-surface)]"></span>
               )}
             </button>
 
@@ -193,42 +211,42 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
                   onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
                   aria-expanded={isAccountMenuOpen}
                   aria-haspopup="true"
-                  className="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg border border-[#27303D] bg-[#11151B] hover:border-[#384355] transition-colors cursor-pointer"
+                  className="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] hover:border-[var(--color-blue-grey)] transition-colors cursor-pointer"
                 >
                   <UserAvatar name={currentUser.full_name} role={currentUser.role} size="sm" />
 
                   <div className="text-left hidden md:block max-w-[130px]">
-                    <div className="font-semibold text-xs text-[#F8FAFC] truncate">
+                    <div className="font-semibold text-xs text-[var(--color-text-main)] truncate">
                       {currentUser.full_name}
                     </div>
-                    <div className="text-[10px] text-[#A1AAB8] font-mono truncate">
+                    <div className="text-[10px] text-[var(--color-text-muted)] font-mono truncate">
                       {currentUser.role === 'FACULTY' ? (currentUser.designation || 'Faculty') : (currentUser.roll_number || 'Student')}
                     </div>
                   </div>
 
-                  <ChevronDown className="w-3.5 h-3.5 text-[#A1AAB8]" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                 </button>
 
                 {/* Account Menu Dropdown */}
                 {isAccountMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-[#11151B] rounded-xl shadow-2xl border border-[#27303D] p-2 z-50 text-xs animate-in fade-in duration-100">
-                    <div className="px-3 py-2.5 border-b border-[#27303D]">
+                  <div className="absolute right-0 mt-2 w-64 bg-[var(--color-surface-card)] rounded-xl shadow-xl border border-[var(--color-border)] p-2 z-50 text-xs animate-in fade-in duration-100">
+                    <div className="px-3 py-2.5 border-b border-[var(--color-border)]">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-white text-xs truncate">
+                        <span className="font-bold text-[var(--color-text-main)] text-xs truncate">
                           {currentUser.full_name}
                         </span>
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
                           currentUser.role === 'FACULTY' 
-                            ? 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
-                            : 'bg-green-950/80 text-green-300 border border-green-800/60'
+                            ? 'bg-[var(--color-surface-hover)] text-[#A16207] border border-[var(--color-border)]'
+                            : 'bg-[var(--color-surface-hover)] text-[var(--color-primary)] border border-[var(--color-border)]'
                         }`}>
                           {currentUser.role}
                         </span>
                       </div>
-                      <p className="text-[11px] text-[#A1AAB8] truncate font-mono">
+                      <p className="text-[11px] text-[var(--color-text-muted)] truncate font-mono">
                         {currentUser.email}
                       </p>
-                      <p className="text-[10px] text-[#64748B] truncate mt-0.5">
+                      <p className="text-[10px] text-[var(--color-text-subtle)] truncate mt-0.5">
                         {currentUser.department}
                       </p>
                     </div>
@@ -239,9 +257,9 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
                           setIsAccountMenuOpen(false);
                           setIsProfileModalOpen(true);
                         }}
-                        className="w-full px-3 py-2 rounded-lg text-left flex items-center gap-2 text-[#F8FAFC] hover:bg-[#171C24] transition-colors cursor-pointer"
+                        className="w-full px-3 py-2 rounded-lg text-left flex items-center gap-2 text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                       >
-                        <User className="w-3.5 h-3.5 text-[#22C55E]" />
+                        <User className="w-3.5 h-3.5 text-[var(--color-primary)]" />
                         <span>Edit Profile</span>
                       </button>
 
@@ -251,21 +269,39 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
                             setIsAccountMenuOpen(false);
                             setActiveTab('faculty-portal');
                           }}
-                          className="w-full px-3 py-2 rounded-lg text-left flex items-center gap-2 text-amber-300 hover:bg-[#171C24] transition-colors cursor-pointer"
+                          className="w-full px-3 py-2 rounded-lg text-left flex items-center justify-between text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                         >
-                          <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Faculty Portal</span>
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="w-3.5 h-3.5 text-[#A16207]" />
+                            <span>Faculty Portal</span>
+                          </div>
+                          {pendingFacultyCount > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#490B1A] text-[#E5DED2]">
+                              {pendingFacultyCount}
+                            </span>
+                          )}
                         </button>
                       )}
-                    </div>
 
-                    <div className="pt-1 border-t border-[#27303D]">
                       <button
                         onClick={() => {
                           setIsAccountMenuOpen(false);
-                          signOutUser();
+                          setIsMapModalOpen(true);
                         }}
-                        className="w-full px-3 py-2 rounded-lg text-left flex items-center gap-2 text-rose-400 hover:bg-rose-950/20 transition-colors cursor-pointer font-medium"
+                        className="w-full px-3 py-2 rounded-lg text-left flex items-center gap-2 text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                        <span>Campus Map</span>
+                      </button>
+                    </div>
+
+                    <div className="pt-1 border-t border-[var(--color-border)]">
+                      <button
+                        onClick={async () => {
+                          setIsAccountMenuOpen(false);
+                          await signOutUser();
+                        }}
+                        className="w-full px-3 py-2 rounded-lg text-left flex items-center gap-2 text-rose-500 hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Sign Out</span>
@@ -275,14 +311,13 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
                 )}
               </div>
             ) : (
-              /* Signed out state */
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
                     setAuthModalMode('LOGIN');
                     setIsAuthModalOpen(true);
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-[#27303D] bg-[#11151B] hover:border-[#384355] text-xs font-semibold text-[#F8FAFC] transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] hover:border-[var(--color-blue-grey)] text-xs font-semibold text-[var(--color-text-main)] transition-colors cursor-pointer"
                 >
                   Sign In
                 </button>
@@ -291,7 +326,7 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
                     setAuthModalMode('REGISTER');
                     setIsAuthModalOpen(true);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-[#22C55E] hover:bg-[#16A34A] text-xs font-bold text-black transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-text)] border border-[#798DA6]/40 text-xs font-bold transition-colors cursor-pointer shadow-xs"
                 >
                   Register
                 </button>
@@ -302,7 +337,7 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle navigation menu"
-              className="lg:hidden p-2 rounded-lg border border-[#27303D] bg-[#11151B] text-[#A1AAB8]"
+              className="lg:hidden p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-muted)] cursor-pointer"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -313,9 +348,10 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <nav className="lg:hidden py-3 border-t border-[#27303D] space-y-1 animate-in slide-in-from-top-2 duration-150">
+          <nav className="lg:hidden py-3 border-t border-[var(--color-border)] space-y-1 animate-in slide-in-from-top-2 duration-150">
             {navItems.map((item) => {
-              const isActive = activeTab === item.tab || (item.tab === 'opportunities' && activeTab === 'feed');
+              const isActive = activeTab === item.tab || 
+                (item.tab === 'events' && (activeTab === 'opportunities' || activeTab === 'feed' || activeTab === 'carpool'));
               return (
                 <button
                   key={item.tab}
@@ -325,8 +361,8 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
                   }}
                   className={`w-full px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors ${
                     isActive
-                      ? 'bg-[#171C24] text-[#22C55E] font-bold border border-[#22C55E]/20'
-                      : 'text-[#A1AAB8] hover:bg-[#11151B]'
+                      ? 'bg-[var(--color-primary)] text-[var(--color-primary-text)] border border-[#798DA6]/40 shadow-xs'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -334,7 +370,7 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
                     <span>{item.label}</span>
                   </div>
                   {item.badge && item.badge > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-600 text-white">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#490B1A] text-[#E5DED2]">
                       {item.badge}
                     </span>
                   )}
@@ -342,25 +378,25 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
               );
             })}
 
-            <div className="pt-2 px-2 flex gap-2">
+            <div className="pt-2 border-t border-[var(--color-border)] flex items-center gap-2">
               <button
                 onClick={() => {
-                  handlePostOpportunityClick();
+                  handlePostEventClick();
                   setIsMobileMenuOpen(false);
                 }}
-                className="flex-1 py-2 rounded-lg bg-[#22C55E] text-black text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 py-2 rounded-lg bg-[var(--color-primary)] text-[var(--color-primary-text)] font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
               >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                Create Opportunity
+                <Plus className="w-4 h-4" />
+                Create Event
               </button>
+
               <button
-                onClick={() => {
-                  setIsMapModalOpen(true);
-                  setIsMobileMenuOpen(false);
-                }}
-                className="py-2 px-4 rounded-lg border border-[#27303D] bg-[#11151B] text-[#A1AAB8] text-xs font-semibold cursor-pointer"
+                onClick={toggleTheme}
+                className="py-2 px-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-card)] text-xs font-semibold flex items-center gap-1.5 text-[var(--color-text-main)]"
+                title={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
               >
-                Campus Map
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
               </button>
             </div>
           </nav>

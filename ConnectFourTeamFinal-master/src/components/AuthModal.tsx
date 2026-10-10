@@ -189,16 +189,16 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
       aria-modal="true"
       aria-labelledby="auth-modal-title"
     >
-      <div className="relative w-full max-w-xl bg-[#0E121A] rounded-2xl shadow-2xl border border-[#27303D] flex flex-col max-h-[92vh] overflow-hidden text-[#F8FAFC]">
+      <div className="relative w-full max-w-xl bg-[var(--color-surface-card)] rounded-2xl shadow-2xl border border-[var(--color-border)] flex flex-col max-h-[92vh] overflow-hidden text-[var(--color-text-main)]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#27303D] bg-[#090B0F]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
           <Logo size="sm" showCampusTag={true} />
 
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 rounded-lg text-[#A1AAB8] hover:text-[#F8FAFC] hover:bg-[#171C24] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -209,8 +209,8 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
           
           {/* Error Banner */}
           {errorMsg && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+            <div className="mb-5 p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -219,10 +219,10 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
           {authStep === 'REGISTER' && (
             <div>
               <div className="mb-6">
-                <h2 id="auth-modal-title" className="text-xl font-bold text-[#F8FAFC] tracking-tight">
+                <h2 id="auth-modal-title" className="text-xl font-bold text-[var(--color-text-main)] tracking-tight">
                   Create your Connect account
                 </h2>
-                <p className="text-xs text-[#A1AAB8] mt-1">
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">
                   Enter your official university email to join the Amrita campus collaboration network.
                 </p>
               </div>
@@ -230,33 +230,33 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 {/* College Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#F8FAFC] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1.5">
                     College Email Address *
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+                    <Mail className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="username@cb.students.amrita.edu"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E] focus:ring-1 focus:ring-[#22C55E]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] focus:ring-1 focus:ring-[var(--color-burgundy)]"
                     />
                   </div>
-                  <p className="text-[11px] text-[#A1AAB8] mt-1 flex items-center gap-1">
-                    <Info className="w-3 h-3 text-[#22C55E]" />
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1 flex items-center gap-1">
+                    <Info className="w-3 h-3 text-[var(--color-burgundy)]" />
                     Approved domains: @cb.students.amrita.edu, @cb.amrita.edu, @amrita.edu
                   </p>
                 </div>
 
                 {/* Password */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#F8FAFC] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1.5">
                     Password *
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+                    <Lock className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                     <input
                       type="password"
                       required
@@ -264,18 +264,18 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Minimum 8 characters"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E] focus:ring-1 focus:ring-[#22C55E]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] focus:ring-1 focus:ring-[var(--color-burgundy)]"
                     />
                   </div>
                 </div>
 
                 {/* Confirm Password */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#F8FAFC] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1.5">
                     Confirm Password *
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+                    <Lock className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                     <input
                       type="password"
                       required
@@ -283,7 +283,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repeat your password"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E] focus:ring-1 focus:ring-[#22C55E]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] focus:ring-1 focus:ring-[var(--color-burgundy)]"
                     />
                   </div>
                 </div>
@@ -292,18 +292,18 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-2 py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs shadow-md shadow-green-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full mt-2 py-3 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isLoading ? 'Creating Account...' : 'Create Account'}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
 
-              <div className="mt-6 pt-5 border-t border-[#27303D] text-center text-xs text-[#A1AAB8]">
+              <div className="mt-6 pt-5 border-t border-[var(--color-border)] text-center text-xs text-[var(--color-text-muted)]">
                 Already have an account?{' '}
                 <button
                   onClick={() => { setAuthStep('LOGIN'); setErrorMsg(null); }}
-                  className="text-[#22C55E] font-semibold hover:underline cursor-pointer"
+                  className="text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold hover:underline cursor-pointer"
                 >
                   Sign In
                 </button>
@@ -315,10 +315,10 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
           {authStep === 'LOGIN' && (
             <div>
               <div className="mb-6">
-                <h2 id="auth-modal-title" className="text-xl font-bold text-[#F8FAFC] tracking-tight">
+                <h2 id="auth-modal-title" className="text-xl font-bold text-[var(--color-text-main)] tracking-tight">
                   Sign in to Connect
                 </h2>
-                <p className="text-xs text-[#A1AAB8] mt-1">
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">
                   Welcome back. Sign in with your registered college email and password.
                 </p>
               </div>
@@ -326,36 +326,36 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 {/* College Email */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#F8FAFC] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1.5">
                     College Email Address *
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+                    <Mail className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="username@cb.students.amrita.edu"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E] focus:ring-1 focus:ring-[#22C55E]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] focus:ring-1 focus:ring-[var(--color-burgundy)]"
                     />
                   </div>
                 </div>
 
                 {/* Password */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#F8FAFC] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1.5">
                     Password *
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+                    <Lock className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                     <input
                       type="password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E] focus:ring-1 focus:ring-[#22C55E]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] focus:ring-1 focus:ring-[var(--color-burgundy)]"
                     />
                   </div>
                 </div>
@@ -364,18 +364,18 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-2 py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs shadow-md shadow-green-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full mt-2 py-3 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isLoading ? 'Signing In...' : 'Sign In'}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
 
-              <div className="mt-6 pt-5 border-t border-[#27303D] text-center text-xs text-[#A1AAB8]">
+              <div className="mt-6 pt-5 border-t border-[var(--color-border)] text-center text-xs text-[var(--color-text-muted)]">
                 New to Connect?{' '}
                 <button
                   onClick={() => { setAuthStep('REGISTER'); setErrorMsg(null); }}
-                  className="text-[#22C55E] font-semibold hover:underline cursor-pointer"
+                  className="text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold hover:underline cursor-pointer"
                 >
                   Create an account
                 </button>
@@ -387,13 +387,13 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
           {authStep === 'ONBOARDING' && (
             <div>
               <div className="mb-5">
-                <span className="text-[10px] uppercase font-mono font-bold text-[#22C55E] tracking-wider block mb-1">
+                <span className="text-[10px] uppercase font-mono font-bold text-[var(--color-burgundy)] dark:text-[#E5DED2] tracking-wider block mb-1">
                   Step 2 of 2 • Profile Onboarding
                 </span>
-                <h2 id="auth-modal-title" className="text-xl font-bold text-[#F8FAFC] tracking-tight">
+                <h2 id="auth-modal-title" className="text-xl font-bold text-[var(--color-text-main)] tracking-tight">
                   Complete your campus profile
                 </h2>
-                <p className="text-xs text-[#A1AAB8] mt-1">
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">
                   Set up your academic details. No profile pictures or photos required.
                 </p>
               </div>
@@ -401,7 +401,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
               <form onSubmit={handleOnboardingSubmit} className="space-y-4 text-xs">
                 {/* Account Type Selection */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#F8FAFC] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1.5">
                     Account Type
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -410,8 +410,8 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                       onClick={() => setUserRole('STUDENT')}
                       className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                         userRole === 'STUDENT'
-                          ? 'bg-[#22C55E] text-black border-[#22C55E]'
-                          : 'bg-[#11151B] border-[#27303D] text-[#A1AAB8] hover:text-white'
+                          ? 'bg-[var(--color-burgundy)] text-[#E5DED2] border-[var(--color-burgundy)]'
+                          : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                       }`}
                     >
                       <GraduationCap className="w-4 h-4" />
@@ -423,8 +423,8 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                       onClick={() => setUserRole('FACULTY')}
                       className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                         userRole === 'FACULTY'
-                          ? 'bg-[#22C55E] text-black border-[#22C55E]'
-                          : 'bg-[#11151B] border-[#27303D] text-[#A1AAB8] hover:text-white'
+                          ? 'bg-[var(--color-burgundy)] text-[#E5DED2] border-[var(--color-burgundy)]'
+                          : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
                       }`}
                     >
                       <Building2 className="w-4 h-4" />
@@ -432,7 +432,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                     </button>
                   </div>
                   {userRole === 'FACULTY' && (
-                    <p className="text-[11px] text-amber-300 mt-1 flex items-center gap-1">
+                    <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-1 flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       Note: Faculty permissions require administrative verification before issuance rights are unlocked.
                     </p>
@@ -441,27 +441,27 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
 
                 {/* Full Name */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#F8FAFC] mb-1.5">
+                  <label className="block text-xs font-semibold text-[var(--color-text-main)] mb-1.5">
                     Full Name *
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+                    <User className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                     <input
                       type="text"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="e.g. Aditi Krishnan"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                     />
                   </div>
                 </div>
 
                 {/* Student Roll Number & Department Auto-Parser */}
                 {userRole === 'STUDENT' ? (
-                  <div className="p-3.5 rounded-xl bg-[#11151B] border border-[#27303D] space-y-3">
-                    <div className="flex items-center gap-1.5 font-bold text-[#22C55E] text-xs">
-                      <Sparkles className="w-3.5 h-3.5 text-[#22C55E]" />
+                  <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-3">
+                    <div className="flex items-center gap-1.5 font-bold text-[var(--color-burgundy)] dark:text-[#E5DED2] text-xs">
+                      <Sparkles className="w-3.5 h-3.5 text-[var(--color-burgundy)]" />
                       Amrita Roll-Number Auto Parser
                     </div>
 
@@ -473,7 +473,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                       <div>
-                        <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                        <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                           Academic Department *
                         </label>
                         <input
@@ -481,12 +481,12 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                           required
                           value={department}
                           onChange={(e) => setDepartment(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                          className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                        <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                           Joining Year (Batch) *
                         </label>
                         <input
@@ -494,16 +494,16 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                           required
                           value={joiningYear}
                           onChange={(e) => setJoiningYear(parseInt(e.target.value) || 2024)}
-                          className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                          className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                         />
                       </div>
                     </div>
                   </div>
                 ) : (
                   /* Faculty Details */
-                  <div className="p-3.5 rounded-xl bg-[#11151B] border border-[#27303D] grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                      <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                         Faculty Designation *
                       </label>
                       <input
@@ -512,11 +512,11 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                         value={designation}
                         onChange={(e) => setDesignation(e.target.value)}
                         placeholder="e.g. Assistant Professor"
-                        className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                      <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                         Department *
                       </label>
                       <input
@@ -525,7 +525,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
                         placeholder="e.g. Computer Science and Engineering"
-                        className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                       />
                     </div>
                   </div>
@@ -534,7 +534,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                 {/* Skills & Interests */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                    <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                       Skills (comma separated)
                     </label>
                     <input
@@ -542,11 +542,11 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                       value={skillsStr}
                       onChange={(e) => setSkillsStr(e.target.value)}
                       placeholder="e.g. React, Python, ROS2, ML"
-                      className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                    <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                       Interests / Focus (comma separated)
                     </label>
                     <input
@@ -554,14 +554,14 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                       value={interestsStr}
                       onChange={(e) => setInterestsStr(e.target.value)}
                       placeholder="e.g. Robotics, Hackathons, Carpooling"
-                      className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                     />
                   </div>
                 </div>
 
                 {/* Short Bio */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                  <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                     Short Bio (Optional)
                   </label>
                   <textarea
@@ -569,30 +569,30 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="Briefly describe what you build or want to collaborate on..."
-                    className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                   />
                 </div>
 
                 {/* External links */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">GitHub URL (Optional)</label>
+                    <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">GitHub URL (Optional)</label>
                     <input
                       type="url"
                       value={githubUrl}
                       onChange={(e) => setGithubUrl(e.target.value)}
                       placeholder="https://github.com/..."
-                      className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">LinkedIn URL (Optional)</label>
+                    <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">LinkedIn URL (Optional)</label>
                     <input
                       type="url"
                       value={linkedinUrl}
                       onChange={(e) => setLinkedinUrl(e.target.value)}
                       placeholder="https://linkedin.com/in/..."
-                      className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
                     />
                   </div>
                 </div>
@@ -600,7 +600,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose, initialMode = 'LOG
                 {/* Submit Onboarding */}
                 <button
                   type="submit"
-                  className="w-full mt-2 py-3 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs shadow-md shadow-green-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full mt-2 py-3 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Complete Setup & Enter Connect

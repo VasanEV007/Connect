@@ -40,36 +40,36 @@ const MainLayout: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#090B0F] text-[#F8FAFC] transition-colors selection:bg-[#22C55E] selection:text-black">
+    <div className="min-h-screen flex flex-col bg-[var(--color-page-bg)] text-[var(--color-text-main)] transition-colors duration-150 selection:bg-[#490B1A] selection:text-[#E5DED2]">
       
       {/* Top Navbar */}
       <Navbar 
         onOpenNotifications={() => setIsNotificationsOpen(true)} 
       />
 
-      {/* Main Body View */}
+      {/* Main Body View: 1. Events, 2. Calendar, 3. My Activities, 4. Find People, 5. Faculty Portal */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {(activeTab === 'opportunities' || activeTab === 'feed' || activeTab === 'carpool') && <EventFeed />}
-        {activeTab === 'find-people' && <FindPeopleDirectory />}
+        {(activeTab === 'events' || activeTab === 'opportunities' || activeTab === 'feed' || activeTab === 'carpool') && <EventFeed />}
         {activeTab === 'calendar' && <CalendarModule />}
         {activeTab === 'my-activities' && <MyActivitiesModule />}
+        {activeTab === 'find-people' && <FindPeopleDirectory />}
         {activeTab === 'faculty-portal' && <FacultyPortal />}
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-[#27303D] bg-[#0E121A] py-8 px-4 sm:px-6 text-xs text-[#A1AAB8] transition-colors">
+      <footer className="mt-auto border-t border-[var(--color-border)] bg-[var(--color-surface)] py-8 px-4 sm:px-6 text-xs text-[var(--color-text-muted)] transition-colors duration-150">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Logo size="sm" showWordmark={false} />
             <div>
-              <p className="font-bold text-white flex items-center gap-2">
+              <p className="font-bold text-[var(--color-text-main)] flex items-center gap-2">
                 Connect • Amrita Vishwa Vidyapeetham
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-green-950/80 text-green-400 border border-green-800/60">
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[var(--color-surface-hover)] text-[var(--color-primary)] border border-[var(--color-border)]">
                   Ettimadai Campus
                 </span>
               </p>
-              <p className="text-[11px] text-[#A1AAB8]">
-                Connect with people. Discover opportunities. Build together.
+              <p className="text-[11px] text-[var(--color-text-muted)]">
+                Connect with people. Discover events. Build together.
               </p>
             </div>
           </div>
@@ -77,9 +77,9 @@ const MainLayout: React.FC = () => {
           <div className="flex items-center gap-4 text-[11px]">
             <button
               onClick={() => setIsMapModalOpen(true)}
-              className="text-[#A1AAB8] hover:text-[#22C55E] transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <MapPin className="w-3.5 h-3.5 text-[#22C55E]" />
+              <MapPin className="w-3.5 h-3.5" />
               Campus Map
             </button>
           </div>

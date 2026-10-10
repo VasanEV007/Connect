@@ -36,23 +36,23 @@ export const ODSlipModal: React.FC<Props> = ({ slip, onClose }) => {
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-hidden text-slate-900">
         
         {/* Top Control Bar (Hidden during print) */}
-        <div className="no-print flex items-center justify-between px-6 py-3.5 bg-[#0A0D14] text-white border-b border-[#1E2433]">
+        <div className="no-print flex items-center justify-between px-6 py-3.5 bg-[var(--color-surface-card)] text-[var(--color-text-main)] border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#22C55E]" />
+            <ShieldCheck className="w-5 h-5 text-[var(--color-burgundy)]" />
             <span className="font-semibold text-sm">Official Institutional On-Duty (OD) Certificate</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-black text-xs font-bold shadow-md shadow-green-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[var(--color-burgundy)] hover:opacity-95 text-[#E5DED2] text-xs font-bold shadow-md transition-colors cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               Print / Save PDF
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#131722] transition-colors"
+              className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -74,14 +74,14 @@ export const ODSlipModal: React.FC<Props> = ({ slip, onClose }) => {
             {/* University Header */}
             <div className="text-center border-b-2 border-indigo-900/30 pb-5 mb-6">
               <div className="inline-flex items-center justify-center gap-2 mb-1">
-                <div className="w-10 h-10 rounded-full bg-indigo-900 text-amber-300 flex items-center justify-center font-serif text-xl font-bold shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-indigo-900 text-amber-300 flex items-center justify-center text-xl font-bold shadow-sm">
                   ॐ
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-serif font-black tracking-wide text-indigo-950 uppercase">
+                  <h1 className="text-xl sm:text-2xl font-black tracking-wide text-indigo-950 uppercase">
                     Amrita Vishwa Vidyapeetham
                   </h1>
-                  <p className="text-[11px] font-sans uppercase tracking-widest text-slate-600 font-medium">
+                  <p className="text-[11px] uppercase tracking-widest text-slate-600 font-medium">
                     Ettimadai Campus • Coimbatore - 641112, Tamil Nadu, India
                   </p>
                 </div>
@@ -94,10 +94,10 @@ export const ODSlipModal: React.FC<Props> = ({ slip, onClose }) => {
             {/* Verification Reference & Timestamp */}
             <div className="flex items-center justify-between text-xs text-slate-600 border-b border-slate-200 pb-3 mb-6 font-mono">
               <div>
-                <span className="font-sans font-semibold text-slate-500">REF NO:</span> {slip.verification_hash}
+                <span className="font-semibold text-slate-500">REF NO:</span> {slip.verification_hash}
               </div>
               <div>
-                <span className="font-sans font-semibold text-slate-500">DATE ISSUED:</span> {new Date(slip.issued_at).toLocaleDateString()}
+                <span className="font-semibold text-slate-500">DATE ISSUED:</span> {new Date(slip.issued_at).toLocaleDateString()}
               </div>
             </div>
 
@@ -148,7 +148,7 @@ export const ODSlipModal: React.FC<Props> = ({ slip, onClose }) => {
                 <div className="text-[10px] text-slate-500 font-mono">
                   <p className="font-bold text-slate-700">Digital Seal Verified</p>
                   <p className="truncate max-w-[130px]">{slip.verification_hash}</p>
-                  <p className="text-emerald-700 font-sans font-bold flex items-center gap-1 mt-0.5">
+                  <p className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
                     <CheckCircle className="w-3 h-3" /> Validated by Connect Platform
                   </p>
                 </div>
@@ -156,14 +156,14 @@ export const ODSlipModal: React.FC<Props> = ({ slip, onClose }) => {
 
               {/* Signature Block */}
               <div className="text-right">
-                <div className="font-serif italic text-base text-indigo-900 font-semibold mb-1">
+                <div className="italic text-base text-indigo-900 font-semibold mb-1">
                   {slip.faculty_name}
                 </div>
                 <div className="h-0.5 w-40 bg-indigo-950 ml-auto mb-1.5"></div>
                 <p className="text-xs font-bold text-slate-900">{slip.faculty_name}</p>
                 <p className="text-[10px] text-slate-600">{slip.faculty_designation}</p>
                 <p className="text-[10px] text-slate-500">{slip.faculty_dept}</p>
-                <p className="text-[9px] text-slate-400 font-serif italic mt-0.5">Faculty Coordinator Signature</p>
+                <p className="text-[9px] text-slate-500 italic mt-0.5">Faculty Coordinator Signature</p>
               </div>
 
             </div>

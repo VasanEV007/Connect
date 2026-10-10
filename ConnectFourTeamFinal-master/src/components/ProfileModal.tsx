@@ -50,11 +50,11 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-xl bg-[#0E121A] rounded-2xl shadow-2xl border border-[#27303D] flex flex-col max-h-[92vh] overflow-hidden text-[#F8FAFC]">
+      <div className="relative w-full max-w-xl bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] flex flex-col max-h-[92vh] overflow-hidden text-[var(--color-text-main)]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#27303D] bg-[#090B0F]">
-          <h2 className="text-base font-bold text-[#F8FAFC] flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-surface-card)]">
+          <h2 className="text-base font-bold text-[var(--color-text-main)] flex items-center gap-2">
             <UserAvatar name={currentUser.full_name} role={currentUser.role} size="sm" />
             My Connect Profile
           </h2>
@@ -62,7 +62,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 rounded-lg text-[#A1AAB8] hover:text-[#F8FAFC] hover:bg-[#171C24] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -72,24 +72,24 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs">
           
           {/* Identity summary */}
-          <div className="p-4 rounded-xl bg-[#11151B] border border-[#27303D] flex items-center gap-3.5">
+          <div className="p-4 rounded-xl bg-[var(--color-surface-card)] border border-[var(--color-border)] flex items-center gap-3.5">
             <UserAvatar name={currentUser.full_name} role={currentUser.role} size="lg" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-white truncate">{currentUser.full_name}</h3>
+                <h3 className="font-bold text-sm text-[var(--color-text-main)] truncate">{currentUser.full_name}</h3>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                   currentUser.role === 'FACULTY'
-                    ? 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
-                    : 'bg-green-950/80 text-green-300 border border-green-800/60'
+                    ? 'bg-amber-950/40 text-amber-500 border border-amber-800/40'
+                    : 'bg-burgundy/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] border border-[var(--color-burgundy)]/30'
                 }`}>
                   {currentUser.role}
                 </span>
               </div>
-              <p className="text-[#A1AAB8] text-[11px] font-mono mt-0.5 truncate">
+              <p className="text-[var(--color-text-muted)] text-[11px] font-mono mt-0.5 truncate">
                 {currentUser.email}
               </p>
               {currentUser.roll_number && (
-                <p className="text-[10px] text-[#A1AAB8] font-mono">
+                <p className="text-[10px] text-[var(--color-text-muted)] font-mono">
                   Roll: {currentUser.roll_number}
                 </p>
               )}
@@ -98,7 +98,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+              <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                 Full Name
               </label>
               <input
@@ -106,12 +106,12 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] focus:outline-none focus:border-[#22C55E]"
+                className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-burgundy)]"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+              <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                 Academic Department
               </label>
               <input
@@ -119,12 +119,12 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 required
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] focus:outline-none focus:border-[#22C55E]"
+                className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-burgundy)]"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+              <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                 Bio / Collaboration Focus
               </label>
               <textarea
@@ -132,56 +132,56 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="What projects are you working on?"
-                className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] focus:outline-none focus:border-[#22C55E]"
+                className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-burgundy)]"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                   Skills (comma separated)
                 </label>
                 <input
                   type="text"
                   value={skillsStr}
                   onChange={(e) => setSkillsStr(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] focus:outline-none focus:border-[#22C55E]"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-burgundy)]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">
+                <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">
                   Interests (comma separated)
                 </label>
                 <input
                   type="text"
                   value={interestsStr}
                   onChange={(e) => setInterestsStr(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] focus:outline-none focus:border-[#22C55E]"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-burgundy)]"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">GitHub URL</label>
+                <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">GitHub URL</label>
                 <input
                   type="url"
                   value={githubUrl}
                   onChange={(e) => setGithubUrl(e.target.value)}
                   placeholder="https://github.com/..."
-                  className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] focus:outline-none focus:border-[#22C55E]"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-burgundy)]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#A1AAB8] mb-1">LinkedIn URL</label>
+                <label className="block text-[11px] font-semibold text-[var(--color-text-muted)] mb-1">LinkedIn URL</label>
                 <input
                   type="url"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
                   placeholder="https://linkedin.com/in/..."
-                  className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#11151B] text-[#F8FAFC] focus:outline-none focus:border-[#22C55E]"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-card)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-burgundy)]"
                 />
               </div>
             </div>
@@ -189,7 +189,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-[var(--color-burgundy)] hover:opacity-95 text-[#E5DED2] font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
               >
                 {isSaved ? (
                   <>
