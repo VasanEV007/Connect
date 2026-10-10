@@ -1,0 +1,10 @@
+{
+  "name": "connectfourteamfinal-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix ConnectFourTeamFinal-master",
+    "build": "npm run build --prefix ConnectFourTeamFinal-master",
+    "start": "npm run dev --prefix ConnectFourTeamFinal-master",
+    "test": "npm run test --prefix ConnectFourTeamFinal-master"
+  }
+}
