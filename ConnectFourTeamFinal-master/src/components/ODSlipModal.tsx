@@ -149,7 +149,7 @@ export const ODSlipModal: React.FC<Props> = ({ slip, onClose }) => {
                   <p className="font-bold text-slate-700">Digital Seal Verified</p>
                   <p className="truncate max-w-[130px]">{slip.verification_hash}</p>
                   <p className="text-emerald-700 font-sans font-bold flex items-center gap-1 mt-0.5">
-                    <CheckCircle className="w-3 h-3" /> Validated by CampusConnect
+                    <CheckCircle className="w-3 h-3" /> Validated by Connect Platform
                   </p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export const ODSlipModal: React.FC<Props> = ({ slip, onClose }) => {
 
             {/* Footer note */}
             <div className="mt-6 pt-3 border-t border-dashed border-slate-300 text-[10px] text-center text-slate-400">
-              Generated via CampusConnect Academic Registry. Submit to Department Administrative Office for official portal ERP attendance adjustment.
+              Generated via Connect Collaboration Platform. Submit to Department Administrative Office for official portal ERP attendance adjustment.
             </div>
 
           </div>

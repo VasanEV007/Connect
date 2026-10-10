@@ -16,10 +16,71 @@ export interface PostFormInput {
   targetRoles?: { role: string; slots: number }[];
   odHours?: number;
   odAvailable?: boolean;
+  // Carpool fields
+  carpoolOrigin?: string;
+  carpoolDestination?: string;
+  carpoolCostSplit?: string;
 }
 
 /**
- * Validates post creation input
+ * Permitted college email domains. Configurable via VITE_ALLOWED_EMAIL_DOMAINS env var (comma-separated),
+ * defaulting to verified Amrita Vishwa Vidyapeetham domains.
+ */
+export const DEFAULT_ALLOWED_EMAIL_DOMAINS = [
+  'cb.amrita.edu',
+  'amrita.edu',
+  'cb.students.amrita.edu',
+  'students.amrita.edu',
+];
+
+export function getAllowedEmailDomains(): string[] {
+  try {
+    const envDomains = typeof import.meta !== 'undefined' && import.meta.env?.VITE_ALLOWED_EMAIL_DOMAINS;
+    if (envDomains && typeof envDomains === 'string') {
+      return envDomains.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
+    }
+  } catch {
+    // Fall back to defaults if import.meta is unavailable
+  }
+  return DEFAULT_ALLOWED_EMAIL_DOMAINS;
+}
+
+/**
+ * Validates a college email address against allowed university domains
+ */
+export function validateCollegeEmail(
+  email: string,
+  allowedDomains: string[] = getAllowedEmailDomains()
+): { isValid: boolean; normalizedEmail: string; message?: string } {
+  if (!email || !email.trim()) {
+    return { isValid: false, normalizedEmail: '', message: 'College email is required.' };
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(normalized)) {
+    return { isValid: false, normalizedEmail: normalized, message: 'Please enter a valid email address.' };
+  }
+
+  const domain = normalized.split('@')[1];
+  const isAllowed = allowedDomains.some(allowed => 
+    domain === allowed.toLowerCase() || domain.endsWith(`.${allowed.toLowerCase()}`)
+  );
+
+  if (!isAllowed) {
+    return {
+      isValid: false,
+      normalizedEmail: normalized,
+      message: `Only official college email addresses are permitted (@${allowedDomains.join(', @')}).`,
+    };
+  }
+
+  return { isValid: true, normalizedEmail: normalized };
+}
+
+/**
+ * Validates post / opportunity creation input
  */
 export function validatePostForm(input: PostFormInput): Record<string, string> {
   const errors: Record<string, string> = {};
@@ -86,6 +147,16 @@ export function validatePostForm(input: PostFormInput): Record<string, string> {
     }
   }
 
+  // Carpool validations
+  if (input.category === 'CARPOOL') {
+    if (!input.carpoolOrigin || input.carpoolOrigin.trim().length < 2) {
+      errors.carpoolOrigin = 'Please specify a pickup location on or near campus.';
+    }
+    if (!input.carpoolDestination || input.carpoolDestination.trim().length < 2) {
+      errors.carpoolDestination = 'Please specify a travel destination.';
+    }
+  }
+
   return errors;
 }
 
@@ -103,7 +174,7 @@ export function validateApplicationMessage(note: string, isRequired: boolean = f
 }
 
 /**
- * Validates an email address format
+ * Validates general email format
  */
 export function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());

@@ -11,23 +11,49 @@ import {
   AcademicCalendarItem 
 } from '../types';
 import { 
-  SEED_PROFILES, 
-  SEED_POSTS, 
-  SEED_APPLICATIONS, 
-  SEED_MESSAGES, 
-  SEED_NOTIFICATIONS, 
-  SEED_OD_SLIPS, 
   CAMPUS_LANDMARKS, 
   ACADEMIC_CALENDAR_ITEMS 
 } from '../data/seedData';
 import { detectScheduleClash, ClashDetail } from '../utils/clashDetector';
-import { canAccessScopedChat, canReviewApplication, canIssueODSlip } from '../utils/security';
+import { 
+  canAccessScopedChat, 
+  canReviewApplication, 
+  canIssueODSlip,
+  canAccessFacultyPortal
+} from '../utils/security';
+import {
+  signUpWithEmail,
+  signInWithEmail,
+  signOutAuth,
+  getFallbackProfiles,
+  saveFallbackProfiles,
+  getFallbackOpportunities,
+  saveFallbackOpportunities,
+  getFallbackApplications,
+  saveFallbackApplications,
+  getFallbackMessages,
+  saveFallbackMessages,
+  getFallbackNotifications,
+  saveFallbackNotifications,
+  getFallbackODSlips,
+  saveFallbackODSlips,
+  isSupabaseConfigured
+} from '../lib/supabase';
 
-export type NavigationTab = 'feed' | 'find-people' | 'calendar' | 'carpool' | 'faculty-portal' | 'my-activities';
+export type NavigationTab = 
+  | 'opportunities' 
+  | 'find-people' 
+  | 'calendar' 
+  | 'my-activities' 
+  | 'faculty-portal'
+  // Backward compatibility aliases
+  | 'feed'
+  | 'carpool';
 
 interface AppContextType {
-  currentUser: UserProfile;
-  setCurrentUser: (user: UserProfile) => void;
+  currentUser: UserProfile | null;
+  setCurrentUser: (user: UserProfile | null) => void;
+  isAuthenticated: boolean;
   allUsers: UserProfile[];
   posts: Post[];
   applications: Application[];
@@ -50,10 +76,27 @@ interface AppContextType {
   setIsCreatePostModalOpen: (open: boolean) => void;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  authModalMode: 'LOGIN' | 'REGISTER';
+  setAuthModalMode: (mode: 'LOGIN' | 'REGISTER') => void;
+  isProfileModalOpen: boolean;
+  setIsProfileModalOpen: (open: boolean) => void;
   isMapModalOpen: boolean;
   setIsMapModalOpen: (open: boolean) => void;
   
-  // Actions
+  // Backend configuration status
+  isSupabaseActive: boolean;
+
+  // Category pre-selection (e.g. when filtering carpool)
+  selectedCategoryFilter: string;
+  setSelectedCategoryFilter: (cat: string) => void;
+
+  // Real Authentication actions
+  registerNewAccount: (email: string, password: string, initialProfile?: Partial<UserProfile>) => Promise<{ success: boolean; userId?: string; message?: string }>;
+  loginExistingAccount: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  signOutUser: () => Promise<void>;
+  updateCurrentUserProfile: (updates: Partial<UserProfile>) => void;
+  
+  // Real Opportunity actions
   createPost: (postData: Partial<Post>) => Post;
   joinPost: (postId: string, role?: string, message?: string) => Promise<{ success: boolean; message: string }>;
   withdrawApplication: (appId: string) => boolean;
@@ -66,74 +109,52 @@ interface AppContextType {
   declineInvite: (notificationId: string) => void;
   markNotificationRead: (notifId: string) => void;
   markAllNotificationsRead: () => void;
-  registerUser: (newUser: UserProfile) => void;
-  updateCurrentUserProfile: (updates: Partial<UserProfile>) => void;
   checkScheduleClash: (startTime: string, endTime: string, currentPostId?: string) => ClashDetail;
   canAccessChat: (post: Post | null, userId?: string) => boolean;
-  resetToSampleData: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  CURRENT_USER: 'campusconnect_current_user_v2',
-  PROFILES: 'campusconnect_profiles_v2',
-  POSTS: 'campusconnect_posts_v2',
-  APPLICATIONS: 'campusconnect_applications_v2',
-  MESSAGES: 'campusconnect_messages_v2',
-  NOTIFICATIONS: 'campusconnect_notifications_v2',
-  OD_SLIPS: 'campusconnect_od_slips_v2',
-};
+const CURRENT_USER_STORAGE_KEY = 'connect_current_user_v3';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Profiles
-  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PROFILES);
-    return saved ? JSON.parse(saved) : SEED_PROFILES;
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => getFallbackProfiles());
+
+  // Current logged in user (starts from persistent session or null)
+  const [currentUser, setCurrentUserState] = useState<UserProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
-  // Current logged in user (Default to Arjun Nair)
-  const [currentUser, setCurrentUserState] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    return saved ? JSON.parse(saved) : SEED_PROFILES[0];
-  });
-
-  // Posts
-  const [posts, setPosts] = useState<Post[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.POSTS);
-    return saved ? JSON.parse(saved) : SEED_POSTS;
-  });
+  // Posts / Opportunities
+  const [posts, setPosts] = useState<Post[]>(() => getFallbackOpportunities());
 
   // Applications
-  const [applications, setApplications] = useState<Application[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.APPLICATIONS);
-    return saved ? JSON.parse(saved) : SEED_APPLICATIONS;
-  });
+  const [applications, setApplications] = useState<Application[]>(() => getFallbackApplications());
 
   // Messages
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MESSAGES);
-    return saved ? JSON.parse(saved) : SEED_MESSAGES;
-  });
+  const [messages, setMessages] = useState<Message[]>(() => getFallbackMessages());
 
   // Notifications
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    return saved ? JSON.parse(saved) : SEED_NOTIFICATIONS;
-  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => getFallbackNotifications());
 
   // OD Slips
-  const [odSlips, setOdSlips] = useState<ODSlip[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.OD_SLIPS);
-    return saved ? JSON.parse(saved) : SEED_OD_SLIPS;
-  });
+  const [odSlips, setOdSlips] = useState<ODSlip[]>(() => getFallbackODSlips());
 
-  // Landmarks & Calendar items (static/read-only)
+  // Landmarks & Calendar items (static campus data)
   const [landmarks] = useState<CampusLandmark[]>(CAMPUS_LANDMARKS);
   const [calendarItems] = useState<AcademicCalendarItem[]>(ACADEMIC_CALENDAR_ITEMS);
 
-  // Active navigation tab
-  const [activeTab, setActiveTab] = useState<NavigationTab>('feed');
+  // Active navigation tab (Default to 'opportunities')
+  const [activeTab, setActiveTabRaw] = useState<NavigationTab>('opportunities');
+
+  // Category filter state (used to filter e.g. Carpool inside Opportunities)
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
 
   // Modals
   const [selectedPostForDetail, setSelectedPostForDetail] = useState<Post | null>(null);
@@ -141,61 +162,167 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedODSlipForView, setSelectedODSlipForView] = useState<ODSlip | null>(null);
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
-  // Sync state changes to localStorage
+  // Set active tab with role-awareness and backward compatibility mapping
+  const setActiveTab = (tab: NavigationTab) => {
+    let normalizedTab = tab;
+    // Map legacy 'feed' to 'opportunities'
+    if (tab === 'feed') {
+      normalizedTab = 'opportunities';
+    }
+    // Map legacy 'carpool' to 'opportunities' with CARPOOL category active
+    if (tab === 'carpool') {
+      normalizedTab = 'opportunities';
+      setSelectedCategoryFilter('CARPOOL');
+    }
+
+    // Role-based portal protection:
+    // If student attempts to navigate to faculty-portal, block and redirect to opportunities
+    if (normalizedTab === 'faculty-portal' && (!currentUser || !canAccessFacultyPortal(currentUser))) {
+      normalizedTab = 'opportunities';
+    }
+
+    setActiveTabRaw(normalizedTab);
+  };
+
+  // Sync state changes to persistence
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+    if (currentUser) {
+      localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+    }
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(allUsers));
+    saveFallbackProfiles(allUsers);
   }, [allUsers]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+    saveFallbackOpportunities(posts);
   }, [posts]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(applications));
+    saveFallbackApplications(applications);
   }, [applications]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+    saveFallbackMessages(messages);
   }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+    saveFallbackNotifications(notifications);
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.OD_SLIPS, JSON.stringify(odSlips));
+    saveFallbackODSlips(odSlips);
   }, [odSlips]);
 
-  const setCurrentUser = (user: UserProfile) => {
+  // Ensure role-based portal security on role changes
+  useEffect(() => {
+    if (activeTab === 'faculty-portal' && (!currentUser || !canAccessFacultyPortal(currentUser))) {
+      setActiveTabRaw('opportunities');
+    }
+  }, [currentUser, activeTab]);
+
+  const setCurrentUser = (user: UserProfile | null) => {
     setCurrentUserState(user);
+    if (user) {
+      setAllUsers(prev => {
+        const idx = prev.findIndex(u => u.id === user.id);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = user;
+          return updated;
+        }
+        return [user, ...prev];
+      });
+    }
   };
 
   const updateCurrentUserProfile = (updates: Partial<UserProfile>) => {
-    const updated = { ...currentUser, ...updates };
+    if (!currentUser) return;
+    // Disallow self-modification of role or verified flag
+    const { role: _r, is_verified: _v, ...permittedUpdates } = updates;
+    const updated: UserProfile = { ...currentUser, ...permittedUpdates };
     setCurrentUserState(updated);
     setAllUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
   };
 
-  const registerUser = (newUser: UserProfile) => {
-    setAllUsers(prev => [newUser, ...prev]);
-    setCurrentUserState(newUser);
+  // Register real account (College Email + Password)
+  const registerNewAccount = async (
+    email: string, 
+    password: string, 
+    initialProfile?: Partial<UserProfile>
+  ): Promise<{ success: boolean; userId?: string; message?: string }> => {
+    const { user, error } = await signUpWithEmail(email, password);
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    const userId = user?.id || `user-${Date.now()}`;
+    const newProfile: UserProfile = {
+      id: userId,
+      full_name: initialProfile?.full_name || email.split('@')[0],
+      email: email.trim().toLowerCase(),
+      role: initialProfile?.role || 'STUDENT',
+      roll_number: initialProfile?.roll_number,
+      department: initialProfile?.department || 'Engineering',
+      joining_year: initialProfile?.joining_year,
+      designation: initialProfile?.designation,
+      bio: initialProfile?.bio || '',
+      skills: initialProfile?.skills || ['Collaboration'],
+      interests: initialProfile?.interests || ['Campus Events'],
+      github_url: initialProfile?.github_url,
+      linkedin_url: initialProfile?.linkedin_url,
+      is_verified: initialProfile?.role === 'STUDENT',
+      created_at: new Date().toISOString(),
+    };
+
+    setCurrentUser(newProfile);
+    return { success: true, userId, message: 'Account registered successfully.' };
   };
 
-  const resetToSampleData = () => {
-    localStorage.clear();
-    setAllUsers(SEED_PROFILES);
-    setCurrentUserState(SEED_PROFILES[0]);
-    setPosts(SEED_POSTS);
-    setApplications(SEED_APPLICATIONS);
-    setMessages(SEED_MESSAGES);
-    setNotifications(SEED_NOTIFICATIONS);
-    setOdSlips(SEED_OD_SLIPS);
+  // Sign in existing account
+  const loginExistingAccount = async (
+    email: string, 
+    password: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    const { user, error } = await signInWithEmail(email, password);
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    // Load profile
+    const existing = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      setCurrentUser(existing);
+      return { success: true };
+    } else if (user) {
+      const fallbackProfile: UserProfile = {
+        id: user.id,
+        full_name: email.split('@')[0],
+        email: email.toLowerCase(),
+        role: 'STUDENT',
+        department: 'General Engineering',
+        skills: ['General Collaboration'],
+        interests: ['Campus Activities'],
+        created_at: new Date().toISOString(),
+      };
+      setCurrentUser(fallbackProfile);
+      return { success: true };
+    }
+
+    return { success: false, message: 'Could not locate account profile.' };
+  };
+
+  // Sign out
+  const signOutUser = async () => {
+    await signOutAuth();
+    setCurrentUserState(null);
   };
 
   // Clash detection using clashDetector utility
@@ -206,7 +333,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       calendarItems,
       posts,
       applications,
-      currentUser.id,
+      currentUser?.id || 'guest',
       currentPostId
     );
   };
@@ -218,16 +345,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return canAccessScopedChat(user, post, applications);
   };
 
-  // Create post
+  // Create real opportunity
   const createPost = (postData: Partial<Post>): Post => {
+    const host = currentUser || {
+      id: 'user-guest',
+      full_name: 'Campus Organizer',
+      role: 'STUDENT' as const,
+      email: 'organizer@cb.students.amrita.edu',
+      department: 'Engineering',
+      skills: [],
+      interests: [],
+    };
+
     const newPost: Post = {
       id: `post-${Date.now()}`,
-      host_id: currentUser.id,
-      host_name: currentUser.full_name,
-      host_role: currentUser.role,
-      host_avatar: currentUser.avatar_url,
-      host_designation: currentUser.designation,
-      title: postData.title || 'Untitled Activity',
+      host_id: host.id,
+      host_name: host.full_name,
+      host_role: host.role,
+      host_designation: host.designation,
+      title: postData.title || 'Untitled Opportunity',
       description: postData.description || '',
       instructions: postData.instructions || '',
       category: postData.category || 'STUDENT_CASUAL',
@@ -252,21 +388,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       carpool_destination: postData.carpool_destination,
       carpool_cost_split: postData.carpool_cost_split,
       carpool_gender_pref: postData.carpool_gender_pref || 'ANY',
+      carpool_seats_available: postData.carpool_seats_available,
+      carpool_notes: postData.carpool_notes,
       target_roles: postData.target_roles || [],
       created_at: new Date().toISOString(),
     };
 
     setPosts(prev => [newPost, ...prev]);
 
-    // Instantiate initial system welcome chat message
+    // Initial coordination welcome message
     const welcomeMsg: Message = {
       id: `msg-${Date.now()}`,
       post_id: newPost.id,
-      sender_id: currentUser.id,
-      sender_name: currentUser.full_name,
-      sender_role: currentUser.role,
-      sender_roll: currentUser.roll_number,
-      content: `Welcome team! Official coordination room created for "${newPost.title}".`,
+      sender_id: host.id,
+      sender_name: host.full_name,
+      sender_role: host.role,
+      sender_roll: host.roll_number,
+      content: `Official collaboration room created for "${newPost.title}".`,
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, welcomeMsg]);
@@ -280,23 +418,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newPost;
   };
 
-  // Join or apply to post
+  // Join or apply to opportunity
   const joinPost = async (postId: string, role?: string, message?: string): Promise<{ success: boolean; message: string }> => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return { success: false, message: 'Please sign in to register for opportunities.' };
+    }
+
     const post = posts.find(p => p.id === postId);
-    if (!post) return { success: false, message: 'Event not found.' };
+    if (!post) return { success: false, message: 'Opportunity not found.' };
 
     if (post.host_id === currentUser.id) {
-      return { success: false, message: 'You are the host of this opportunity.' };
+      return { success: false, message: 'You are the organizer of this opportunity.' };
     }
 
     // Check if user already applied or joined
     const existingApp = applications.find(a => a.post_id === postId && a.applicant_id === currentUser.id);
     if (existingApp) {
       if (existingApp.status === 'ACCEPTED') {
-        return { success: false, message: 'You are already a confirmed member of this activity.' };
+        return { success: false, message: 'You are already a confirmed participant.' };
       }
       if (existingApp.status === 'PENDING') {
-        return { success: false, message: 'Your application is already pending host review.' };
+        return { success: false, message: 'Your application is currently pending host review.' };
       }
     }
 
@@ -317,7 +460,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         applicant_roll: currentUser.roll_number,
         applicant_dept: currentUser.department,
         applicant_year: currentUser.joining_year,
-        applicant_avatar: currentUser.avatar_url,
         applicant_skills: currentUser.skills,
         assigned_role: role || (post.category === 'CARPOOL' ? 'Passenger' : 'Participant'),
         status: 'ACCEPTED',
@@ -326,7 +468,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         created_at: new Date().toISOString(),
       };
 
-      // Increment filled slots
       const newFilled = post.filled_slots + 1;
       const newStatus = newFilled >= post.total_slots ? 'FULL' : 'OPEN';
 
@@ -376,7 +517,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // ignore
       }
 
-      return { success: true, message: 'Registration confirmed! You have been granted access to the group chat.' };
+      return { success: true, message: 'Registration confirmed! You have access to the group coordination chat.' };
     } else {
       // Locked: Request to Join
       const newApp: Application = {
@@ -387,7 +528,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         applicant_roll: currentUser.roll_number,
         applicant_dept: currentUser.department,
         applicant_year: currentUser.joining_year,
-        applicant_avatar: currentUser.avatar_url,
         applicant_skills: currentUser.skills,
         assigned_role: role || 'Applicant',
         status: 'PENDING',
@@ -404,7 +544,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user_id: post.host_id,
         type: 'APP_SUBMITTED',
         title: 'New Application Submitted',
-        message: `${currentUser.full_name} (${currentUser.roll_number || 'Student'}) submitted an application for "${post.title}" (${role || 'General'}).`,
+        message: `${currentUser.full_name} submitted an application for "${post.title}".`,
         related_post_id: post.id,
         related_post_title: post.title,
         timestamp: new Date().toISOString(),
@@ -413,28 +553,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setNotifications(prev => [hostNotif, ...prev]);
 
-      return { success: true, message: 'Application submitted! The host has been notified to review your profile.' };
+      return { success: true, message: 'Application submitted! The organizer has been notified to review your profile.' };
     }
   };
 
   // Withdraw pending application
   const withdrawApplication = (appId: string): boolean => {
+    if (!currentUser) return false;
     const app = applications.find(a => a.id === appId);
     if (!app || app.applicant_id !== currentUser.id) return false;
 
-    // Remove application
     setApplications(prev => prev.filter(a => a.id !== appId));
     return true;
   };
 
   // Review Application (Approve / Reject)
   const reviewApplication = (appId: string, status: 'ACCEPTED' | 'REJECTED', feedback?: string) => {
+    if (!currentUser) return;
     const app = applications.find(a => a.id === appId);
     if (!app) return;
     const post = posts.find(p => p.id === app.post_id);
     if (!post) return;
 
-    // Verify permission
     if (!canReviewApplication(currentUser, post)) return;
 
     if (status === 'ACCEPTED') {
@@ -458,7 +598,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user_id: app.applicant_id,
         type: 'APP_APPROVED',
         title: 'Application Approved',
-        message: `Your application for "${post.title}" has been approved by ${post.host_name}. You now have full access to the coordination group chat.`,
+        message: `Your application for "${post.title}" has been approved by ${post.host_name}. You now have access to the coordination group chat.`,
         related_post_id: post.id,
         related_post_title: post.title,
         timestamp: new Date().toISOString(),
@@ -502,17 +642,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setApplications(prev => prev.map(a => a.id === appId ? { ...a, attended } : a));
   };
 
-  // Generate Verified OD Slip
+  // Generate Verified OD Slip (strictly for authorized faculty hosts)
   const generateODSlip = (appId: string): ODSlip | null => {
+    if (!currentUser) return null;
     const app = applications.find(a => a.id === appId);
     if (!app) return null;
     const post = posts.find(p => p.id === app.post_id);
     if (!post) return null;
 
-    // Check authorization: must be faculty host
     if (!canIssueODSlip(currentUser, post)) return null;
 
-    // Check if OD slip already exists for this application
     const existing = odSlips.find(s => s.application_id === appId);
     if (existing) return existing;
 
@@ -544,7 +683,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `notif-${Date.now()}`,
       user_id: app.applicant_id,
       type: 'OD_GENERATED',
-      title: 'Official OD Certificate Issued',
+      title: 'Verified OD Certificate Issued',
       message: `Your verified OD certificate for "${post.title}" has been signed by ${post.host_name}. Click to view and download your slip.`,
       related_post_id: post.id,
       related_post_title: post.title,
@@ -565,11 +704,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Send message to scoped group chat
   const sendMessage = (postId: string, content: string): boolean => {
-    if (!content.trim()) return false;
+    if (!currentUser || !content.trim()) return false;
     const post = posts.find(p => p.id === postId);
     if (!post) return false;
 
-    // Check permission
     if (!canAccessChat(post, currentUser.id)) {
       return false;
     }
@@ -581,7 +719,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sender_name: currentUser.full_name,
       sender_role: currentUser.role,
       sender_roll: currentUser.roll_number,
-      sender_avatar: currentUser.avatar_url,
       content: content.trim(),
       created_at: new Date().toISOString(),
     };
@@ -590,8 +727,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
-  // Manual Invite student to post from Find People Directory
+  // Invite student to post from Find People Directory
   const inviteUserToPost = (targetUserId: string, postId: string, note?: string): boolean => {
+    if (!currentUser) return false;
     const post = posts.find(p => p.id === postId);
     const targetUser = allUsers.find(u => u.id === targetUserId);
     if (!post || !targetUser) return false;
@@ -627,6 +765,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const markAllNotificationsRead = () => {
+    if (!currentUser) return;
     setNotifications(prev => prev.map(n => n.user_id === currentUser.id ? { ...n, read: true } : n));
   };
 
@@ -635,6 +774,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         currentUser,
         setCurrentUser,
+        isAuthenticated: Boolean(currentUser),
         allUsers,
         posts,
         applications,
@@ -655,8 +795,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsCreatePostModalOpen,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        authModalMode,
+        setAuthModalMode,
+        isProfileModalOpen,
+        setIsProfileModalOpen,
         isMapModalOpen,
         setIsMapModalOpen,
+        isSupabaseActive: isSupabaseConfigured(),
+        selectedCategoryFilter,
+        setSelectedCategoryFilter,
+        registerNewAccount,
+        loginExistingAccount,
+        signOutUser,
+        updateCurrentUserProfile,
         createPost,
         joinPost,
         withdrawApplication,
@@ -669,11 +820,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         declineInvite,
         markNotificationRead,
         markAllNotificationsRead,
-        registerUser,
-        updateCurrentUserProfile,
         checkScheduleClash,
         canAccessChat,
-        resetToSampleData,
       }}
     >
       {children}

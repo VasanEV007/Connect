@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { validatePostForm, validateApplicationMessage, validateEmail, PostFormInput } from './validation';
+import { 
+  validatePostForm, 
+  validateApplicationMessage, 
+  validateEmail, 
+  validateCollegeEmail,
+  PostFormInput 
+} from './validation';
 
 describe('validation utility', () => {
   const validForm: PostFormInput = {
@@ -78,16 +84,66 @@ describe('validation utility', () => {
     expect(excessiveOd.odHours).toBeDefined();
   });
 
+  it('validates carpool category specific fields', () => {
+    const carpoolForm: PostFormInput = {
+      ...validForm,
+      category: 'CARPOOL',
+      carpoolOrigin: '',
+      carpoolDestination: '',
+    };
+    const errors = validatePostForm(carpoolForm);
+    expect(errors.carpoolOrigin).toBeDefined();
+    expect(errors.carpoolDestination).toBeDefined();
+
+    const validCarpool: PostFormInput = {
+      ...validForm,
+      category: 'CARPOOL',
+      carpoolOrigin: 'Main Gate Gate 1',
+      carpoolDestination: 'Gandhipuram Bus Stand',
+    };
+    const validErrors = validatePostForm(validCarpool);
+    expect(validErrors.carpoolOrigin).toBeUndefined();
+    expect(validErrors.carpoolDestination).toBeUndefined();
+  });
+
   it('validates application messages correctly', () => {
     expect(validateApplicationMessage('', true)).toBeDefined(); // required
     expect(validateApplicationMessage('Short', true)).toBeDefined(); // <10 chars
     expect(validateApplicationMessage('This is a solid note explaining my robotics background and GitHub links.', true)).toBeNull();
   });
 
-  it('validates email addresses accurately', () => {
-    expect(validateEmail('arjun.nair@cb.students.amrita.edu')).toBe(true);
-    expect(validateEmail('radhika.menon@cb.amrita.edu')).toBe(true);
+  it('validates general email addresses accurately', () => {
+    expect(validateEmail('student@cb.students.amrita.edu')).toBe(true);
+    expect(validateEmail('faculty@cb.amrita.edu')).toBe(true);
     expect(validateEmail('not-an-email')).toBe(false);
     expect(validateEmail('')).toBe(false);
+  });
+
+  it('validates college email domains with configurable domain policy', () => {
+    const amritaAllowed = ['cb.amrita.edu', 'amrita.edu', 'cb.students.amrita.edu'];
+
+    // Valid university emails
+    const res1 = validateCollegeEmail('student@cb.students.amrita.edu', amritaAllowed);
+    expect(res1.isValid).toBe(true);
+    expect(res1.normalizedEmail).toBe('student@cb.students.amrita.edu');
+
+    const res2 = validateCollegeEmail('faculty@cb.amrita.edu', amritaAllowed);
+    expect(res2.isValid).toBe(true);
+
+    const res3 = validateCollegeEmail('CAPS.USER@AMRITA.EDU', amritaAllowed);
+    expect(res3.isValid).toBe(true);
+    expect(res3.normalizedEmail).toBe('caps.user@amrita.edu');
+
+    // Invalid non-university emails
+    const res4 = validateCollegeEmail('random@gmail.com', amritaAllowed);
+    expect(res4.isValid).toBe(false);
+    expect(res4.message).toContain('Only official college email addresses are permitted');
+
+    const res5 = validateCollegeEmail('spammer@yahoo.com', amritaAllowed);
+    expect(res5.isValid).toBe(false);
+
+    // Empty or invalid syntax
+    const res6 = validateCollegeEmail('', amritaAllowed);
+    expect(res6.isValid).toBe(false);
   });
 });

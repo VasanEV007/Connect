@@ -28,9 +28,10 @@ export interface UserProfile {
   linkedin_url?: string;
   skills: string[];
   interests: string[];
-  avatar_url?: string;
-  designation?: string; // Faculty designation (e.g. Professor & Lab Lead)
+  designation?: string; // Faculty designation (e.g. Assistant Professor)
   cabin_or_lab?: string; // Faculty office or lab
+  is_verified?: boolean; // Institutional verification flag
+  created_at?: string;
 }
 
 export interface ParsedRollNumber {
@@ -60,7 +61,6 @@ export interface Post {
   host_id: string;
   host_name: string;
   host_role: UserRole;
-  host_avatar?: string;
   host_designation?: string;
   title: string;
   description: string;
@@ -83,10 +83,13 @@ export interface Post {
   od_hours?: number;
   research_perks?: string;
   weekly_commitment_hours?: number;
+  // Carpool / Travel fields
   carpool_destination?: string;
   carpool_origin?: string;
   carpool_cost_split?: string;
   carpool_gender_pref?: 'ANY' | 'FEMALE_ONLY' | 'MALE_ONLY';
+  carpool_seats_available?: number;
+  carpool_notes?: string;
   target_roles?: TargetRoleSlot[];
   created_at: string;
 }
@@ -99,7 +102,6 @@ export interface Application {
   applicant_roll?: string;
   applicant_dept?: string;
   applicant_year?: number;
-  applicant_avatar?: string;
   applicant_skills: string[];
   assigned_role?: string;
   status: ApplicationStatus;
@@ -115,7 +117,6 @@ export interface Message {
   sender_name: string;
   sender_role: UserRole;
   sender_roll?: string;
-  sender_avatar?: string;
   content: string;
   created_at: string;
 }

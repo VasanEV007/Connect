@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Post } from '../types';
+import { ClashDetail } from '../utils/clashDetector';
+import { UserAvatar } from './ui/UserAvatar';
 import { 
   X, 
   Calendar, 
@@ -52,23 +54,25 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
 
   if (!post) return null;
 
-  const isHost = post.host_id === currentUser.id;
-  const existingApp = applications.find(a => a.post_id === post.id && a.applicant_id === currentUser.id);
+  const isHost = currentUser ? post.host_id === currentUser.id : false;
+  const existingApp = currentUser ? applications.find(a => a.post_id === post.id && a.applicant_id === currentUser.id) : undefined;
   const isAccepted = existingApp?.status === 'ACCEPTED';
   const isPending = existingApp?.status === 'PENDING';
   const isFull = post.filled_slots >= post.total_slots;
 
   // Eligibility check
-  const deptEligible = post.eligible_departments.includes('ANY') || 
+  const deptEligible = !currentUser || post.eligible_departments.includes('ANY') || 
     (currentUser.department && post.eligible_departments.some(d => currentUser.department?.toUpperCase().includes(d.toUpperCase())));
   
-  const yearEligible = post.eligible_years.length === 0 || 
+  const yearEligible = !currentUser || post.eligible_years.length === 0 || 
     (currentUser.joining_year && post.eligible_years.includes(currentUser.joining_year));
   
   const isEligible = deptEligible && yearEligible;
 
   // Clash check
-  const clash = checkScheduleClash(post.start_time, post.end_time);
+  const clash: ClashDetail = currentUser 
+    ? checkScheduleClash(post.start_time, post.end_time, post.id) 
+    : { hasClash: false, severity: 'NONE' };
 
   const handleJoinOrApply = async () => {
     setIsSubmitting(true);
@@ -155,22 +159,16 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* Host Profile */}
-            <div className="p-4 rounded-xl border border-[#1E2433] bg-[#0A0D14] flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#1A202C] border border-[#2D3748] text-green-400 flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
-                {post.host_avatar ? (
-                  <img src={post.host_avatar} alt={post.host_name} className="w-full h-full object-cover" />
-                ) : (
-                  post.host_name.charAt(0)
-                )}
-              </div>
+            <div className="p-4 rounded-xl border border-[#27303D] bg-[#11151B] flex items-center gap-3">
+              <UserAvatar name={post.host_name} role={post.host_role} size="lg" />
               <div>
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <div className="text-xs font-semibold text-[#A1AAB8] uppercase tracking-wider">
                   Organized By
                 </div>
                 <div className="font-bold text-sm text-white">
                   {post.host_name}
                 </div>
-                <div className="text-xs text-slate-400 line-clamp-1">
+                <div className="text-xs text-[#A1AAB8] line-clamp-1">
                   {post.host_designation || (post.host_role === 'FACULTY' ? 'Faculty Coordinator' : 'Student Organizer')}
                 </div>
               </div>

@@ -1,27 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { UserProfile } from '../types';
-import { 
-  Search, 
-  Mail, 
-  Globe, 
-  Code, 
-  Check, 
-  Send, 
-  Info 
-} from 'lucide-react';
-import { Button } from './ui/Button';
+import { UserAvatar } from './ui/UserAvatar';
 import { Badge } from './ui/Badge';
 import { EmptyState } from './ui/EmptyState';
 import { Modal } from './ui/Modal';
+import { 
+  Search, 
+  Mail, 
+  Code, 
+  Check, 
+  Send
+} from 'lucide-react';
 
 export const FindPeopleDirectory: React.FC = () => {
-  const { allUsers, currentUser, posts, inviteUserToPost } = useApp();
+  const { allUsers, currentUser, posts, inviteUserToPost, setIsAuthModalOpen, setAuthModalMode } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
-  const [selectedSkillFilter, setSelectedSkillFilter] = useState<string>('ALL');
 
   // Candidate detail modal state
   const [viewingProfile, setViewingProfile] = useState<UserProfile | null>(null);
@@ -34,13 +31,14 @@ export const FindPeopleDirectory: React.FC = () => {
 
   // My open hosted posts that I can invite people into
   const myHostedPosts = useMemo(() => {
+    if (!currentUser) return [];
     return posts.filter(p => p.host_id === currentUser.id && p.status === 'OPEN');
-  }, [posts, currentUser.id]);
+  }, [posts, currentUser]);
 
   // Filter candidates (excluding self)
   const filteredUsers = useMemo(() => {
     return allUsers.filter(user => {
-      if (user.id === currentUser.id) return false;
+      if (currentUser && user.id === currentUser.id) return false;
 
       // Multi-term search
       if (searchQuery.trim()) {
@@ -48,8 +46,8 @@ export const FindPeopleDirectory: React.FC = () => {
         const matchName = user.full_name.toLowerCase().includes(q);
         const matchRoll = user.roll_number?.toLowerCase().includes(q) || false;
         const matchBio = user.bio?.toLowerCase().includes(q) || false;
-        const matchSkill = user.skills.some(s => s.toLowerCase().includes(q));
-        const matchInterest = user.interests.some(i => i.toLowerCase().includes(q));
+        const matchSkill = user.skills?.some(s => s.toLowerCase().includes(q));
+        const matchInterest = user.interests?.some(i => i.toLowerCase().includes(q));
         if (!matchName && !matchRoll && !matchBio && !matchSkill && !matchInterest) {
           return false;
         }
@@ -69,16 +67,9 @@ export const FindPeopleDirectory: React.FC = () => {
         }
       }
 
-      // Skill filter
-      if (selectedSkillFilter !== 'ALL') {
-        if (!user.skills.some(s => s.toLowerCase() === selectedSkillFilter.toLowerCase())) {
-          return false;
-        }
-      }
-
       return true;
     });
-  }, [allUsers, currentUser.id, searchQuery, selectedDept, selectedYear, selectedSkillFilter]);
+  }, [allUsers, currentUser, searchQuery, selectedDept, selectedYear]);
 
   const handleSendInvite = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,160 +85,126 @@ export const FindPeopleDirectory: React.FC = () => {
     }, 1200);
   };
 
-  const popularSkills = ['React', 'ROS2', 'OpenCV', 'DaVinci Resolve', 'Python', 'IoT', 'PyTorch', 'UI/UX Design'];
+  const handleInviteClick = (user: UserProfile) => {
+    if (!currentUser) {
+      setAuthModalMode('LOGIN');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setInvitingUser(user);
+    if (myHostedPosts.length > 0) {
+      setSelectedPostId(myHostedPosts[0].id);
+    }
+  };
+
+  const departments = [
+    'ALL',
+    'COMPUTER SCIENCE',
+    'AUTOMATION AND ROBOTICS',
+    'ELECTRONICS',
+    'ELECTRICAL',
+    'MECHANICAL',
+    'AI & DATA SCIENCE',
+    'CYBER SECURITY'
+  ];
 
   return (
     <div className="space-y-6">
       
-      {/* Directory Header */}
-      <div className="bg-[#0D1017] p-6 rounded-2xl border border-[#1E2433] shadow-xl space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-white">
-                Find Collaborators & Peers
-              </h1>
-              <Badge variant="primary" size="sm">
-                Manual Discovery Engine
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Search students by verified skills, technical tools, and academic batch. Direct peer-to-peer invitation without algorithmic black boxes.
-            </p>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F8FAFC]">
+          Find People & Collaborators
+        </h1>
+        <p className="text-xs sm:text-sm text-[#A1AAB8] mt-1">
+          Connect with Amrita students and faculty researchers by technical skills, department, and project interests.
+        </p>
+      </div>
+
+      {/* Search & Filter Controls */}
+      <div className="p-4 rounded-2xl bg-[#11151B] border border-[#27303D] space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-[#A1AAB8] absolute left-3.5 top-3" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, roll number, department, or technical skill..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] placeholder:text-[#64748B] text-xs focus:outline-none focus:border-[#22C55E]"
+            />
           </div>
 
-          <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-[#07090E] border border-[#1E2433] text-xs text-slate-300 max-w-sm">
-            <Info className="w-4 h-4 text-green-400 shrink-0" />
-            <span>Exact skill and keyword querying — discover candidates who match your exact project stack.</span>
-          </div>
-        </div>
-
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search candidates by skill (e.g. DaVinci, OpenCV, ROS2, React), name, or roll number..."
-            aria-label="Search candidates"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#1E2433] bg-[#07090E] text-xs sm:text-sm text-white focus:outline-none focus:border-[#22C55E] transition-all shadow-xs"
-          />
-        </div>
-
-        {/* Quick Skill Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-xs font-semibold text-slate-400">Popular Skills:</span>
-          {popularSkills.map(skill => (
-            <button
-              key={skill}
-              onClick={() => setSelectedSkillFilter(selectedSkillFilter === skill ? 'ALL' : skill)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                selectedSkillFilter === skill
-                  ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E] font-bold shadow-xs'
-                  : 'bg-[#141824] hover:bg-[#1A2030] text-slate-300 border border-[#232B3B]'
-              }`}
-            >
-              {skill}
-            </button>
-          ))}
-          {selectedSkillFilter !== 'ALL' && (
-            <button
-              onClick={() => setSelectedSkillFilter('ALL')}
-              className="text-xs text-rose-400 hover:underline font-semibold ml-2 cursor-pointer"
-            >
-              Clear Skill Filter
-            </button>
-          )}
-        </div>
-
-        {/* Dropdown Filters (Dept, Batch) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-[#1E2433] text-xs">
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-              Department Whitelist
-            </label>
+          <div className="flex items-center gap-2">
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              aria-label="Filter by department"
-              className="w-full px-3 py-1.5 rounded-xl border border-[#1E2433] bg-[#07090E] text-xs text-slate-200 cursor-pointer"
+              className="px-3 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
             >
               <option value="ALL">All Departments</option>
-              <option value="COMPUTER SCIENCE">Computer Science (CSE)</option>
-              <option value="ROBOTICS">Robotics & Automation (ARE)</option>
-              <option value="ARTIFICIAL INTELLIGENCE">Artificial Intelligence (AI/AIE)</option>
-              <option value="ELECTRONICS">Electronics & Comm (ECE)</option>
-              <option value="MECHANICAL">Mechanical (ME)</option>
+              {departments.filter(d => d !== 'ALL').map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
             </select>
-          </div>
 
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-              Academic Batch / Year
-            </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              aria-label="Filter by academic batch"
-              className="w-full px-3 py-1.5 rounded-xl border border-[#1E2433] bg-[#07090E] text-xs text-slate-200 cursor-pointer"
+              className="px-3 py-2.5 rounded-xl border border-[#27303D] bg-[#0E121A] text-[#F8FAFC] text-xs focus:outline-none focus:border-[#22C55E]"
             >
               <option value="ALL">All Batches</option>
-              <option value="2024">2024 (2nd Year)</option>
-              <option value="2023">2023 (3rd Year)</option>
-              <option value="2022">2022 (4th Year)</option>
-              <option value="2025">2025 (1st Year)</option>
+              <option value="2021">Batch 2021</option>
+              <option value="2022">Batch 2022</option>
+              <option value="2023">Batch 2023</option>
+              <option value="2024">Batch 2024</option>
+              <option value="2025">Batch 2025</option>
             </select>
-          </div>
-
-          <div className="flex items-end">
-            <div className="text-xs text-slate-400 pb-1.5">
-              Showing <strong>{filteredUsers.length}</strong> available student & faculty profiles
-            </div>
           </div>
         </div>
 
-      </div>
-
-      {/* Candidate Profile Cards Grid */}
-      {filteredUsers.length === 0 ? (
-        <EmptyState
-          icon={<Search className="w-6 h-6 text-slate-400" />}
-          title="No profiles match your manual query"
-          description="Try broadening your skill keywords or clearing department and batch filters."
-          action={
-            <Button
-              variant="secondary"
-              size="sm"
+        <div className="flex items-center justify-between text-xs text-[#A1AAB8] pt-1">
+          <span>
+            Found <strong className="text-white">{filteredUsers.length}</strong> {filteredUsers.length === 1 ? 'collaborator' : 'collaborators'}
+          </span>
+          {(searchQuery || selectedDept !== 'ALL' || selectedYear !== 'ALL') && (
+            <button
               onClick={() => {
                 setSearchQuery('');
                 setSelectedDept('ALL');
                 setSelectedYear('ALL');
-                setSelectedSkillFilter('ALL');
               }}
+              className="text-[#22C55E] hover:underline cursor-pointer"
             >
-              Reset Search & Filters
-            </Button>
-          }
-        />
+              Reset filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Directory Cards Grid */}
+      {filteredUsers.length === 0 ? (
+        <div className="py-12">
+          <EmptyState
+            title={allUsers.length === 0 ? "No collaborators registered yet" : "No matching people found"}
+            description={
+              allUsers.length === 0
+                ? "The directory updates automatically when students and faculty create their Connect profiles."
+                : "Try clearing your search terms or expanding department filters."
+            }
+          />
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredUsers.map((user) => (
-            <article
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredUsers.map(user => (
+            <div
               key={user.id}
-              className="p-5 rounded-2xl bg-[#0D1017] border border-[#1E2433] shadow-xl hover:border-[#2D3748] transition-all flex flex-col justify-between space-y-4"
+              className="rounded-2xl bg-[#11151B] border border-[#27303D] p-5 flex flex-col justify-between hover:border-[#384355] transition-all"
             >
               <div className="space-y-3">
                 
-                {/* Header: Avatar, Name, Roll */}
+                {/* Header: UserAvatar, Name, Roll */}
                 <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-[#1A202C] border border-[#2D3748] text-green-400 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
-                    ) : (
-                      user.full_name.charAt(0)
-                    )}
-                  </div>
+                  <UserAvatar name={user.full_name} role={user.role} size="md" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
@@ -257,225 +214,172 @@ export const FindPeopleDirectory: React.FC = () => {
                       >
                         {user.full_name}
                       </h3>
-                      <Badge variant={user.role === 'FACULTY' ? 'warning' : 'default'} size="sm">
+                      <Badge variant={user.role === 'FACULTY' ? 'warning' : 'default'}>
                         {user.role}
                       </Badge>
                     </div>
 
-                    <p className="text-[11px] font-mono text-green-400 truncate mt-0.5">
-                      {user.roll_number || user.department}
+                    <p className="text-[11px] font-mono text-[#22C55E] truncate mt-0.5">
+                      {user.roll_number || user.designation || user.department}
                     </p>
 
-                    <p className="text-[11px] text-slate-400 truncate">
+                    <p className="text-[11px] text-[#A1AAB8] truncate">
                       {user.department} {user.joining_year ? `• Batch ${user.joining_year}` : ''}
                     </p>
                   </div>
                 </div>
 
-                {/* Bio Snippet */}
+                {/* Bio */}
                 {user.bio && (
-                  <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
+                  <p className="text-xs text-[#A1AAB8] leading-relaxed line-clamp-2">
                     {user.bio}
                   </p>
                 )}
 
-                {/* Skills Chips */}
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
-                    Competencies & Skills
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {user.skills.slice(0, 4).map((skill, i) => {
-                      const isHighlighted = searchQuery && skill.toLowerCase().includes(searchQuery.toLowerCase().trim());
-                      return (
+                {/* Skills */}
+                {user.skills && user.skills.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] block">
+                      Skills
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {user.skills.slice(0, 4).map((skill, i) => (
                         <span
                           key={i}
-                          className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                            isHighlighted
-                              ? 'bg-amber-950 text-amber-300 font-bold border border-amber-500'
-                              : 'bg-[#141824] text-slate-300 border border-[#222738]'
-                          }`}
+                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#171C24] text-[#A1AAB8] border border-[#27303D]"
                         >
                           {skill}
                         </span>
-                      );
-                    })}
-                    {user.skills.length > 4 && (
-                      <button
-                        onClick={() => setViewingProfile(user)}
-                        className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium self-center hover:underline"
-                      >
-                        +{user.skills.length - 4} more
-                      </button>
-                    )}
+                      ))}
+                      {user.skills.length > 4 && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] text-[#64748B]">
+                          +{user.skills.length - 4}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
               </div>
 
               {/* Bottom Actions */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-slate-400 text-xs">
+              <div className="pt-4 mt-4 border-t border-[#27303D] flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-[#A1AAB8] text-xs">
                   {user.github_url && (
-                    <a href={user.github_url} target="_blank" rel="noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1 font-medium" title="GitHub">
+                    <a href={user.github_url} target="_blank" rel="noreferrer" className="hover:text-white transition-colors" title="GitHub">
                       <Code className="w-3.5 h-3.5" />
-                      <span>Code</span>
                     </a>
                   )}
-                  {user.portfolio_url && (
-                    <a href={user.portfolio_url} target="_blank" rel="noreferrer" className="hover:text-indigo-600 transition-colors flex items-center gap-1 font-medium" title="Portfolio">
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>Web</span>
+                  {user.linkedin_url && (
+                    <a href={user.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-white transition-colors" title="LinkedIn">
+                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                      </svg>
                     </a>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                <div className="flex items-center gap-2">
+                  <button
                     onClick={() => setViewingProfile(user)}
+                    className="px-3 py-1.5 rounded-lg border border-[#27303D] bg-[#171C24] hover:bg-[#202733] text-white text-xs font-semibold cursor-pointer"
                   >
                     Profile
-                  </Button>
+                  </button>
 
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => {
-                      setInvitingUser(user);
-                      if (myHostedPosts.length > 0) {
-                        setSelectedPostId(myHostedPosts[0].id);
-                      }
-                    }}
-                    leftIcon={<Mail className="w-3.5 h-3.5" />}
+                  <button
+                    onClick={() => handleInviteClick(user)}
+                    className="px-3 py-1.5 rounded-lg bg-[#22C55E] hover:bg-[#16A34A] text-black text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                   >
+                    <Mail className="w-3 h-3" />
                     Invite
-                  </Button>
+                  </button>
                 </div>
               </div>
-
-            </article>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Profile Detail Modal */}
+      {/* Candidate Profile Modal */}
       {viewingProfile && (
         <Modal
           isOpen={Boolean(viewingProfile)}
           onClose={() => setViewingProfile(null)}
-          title="Candidate Profile Details"
+          title="Collaborator Profile"
           maxWidth="lg"
         >
           <div className="p-6 space-y-5 text-xs sm:text-sm">
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold text-lg flex items-center justify-center shrink-0 overflow-hidden">
-                {viewingProfile.avatar_url ? (
-                  <img src={viewingProfile.avatar_url} alt={viewingProfile.full_name} className="w-full h-full object-cover" />
-                ) : (
-                  viewingProfile.full_name.charAt(0)
-                )}
-              </div>
+              <UserAvatar name={viewingProfile.full_name} role={viewingProfile.role} size="lg" />
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  <h3 className="font-bold text-base text-white">
                     {viewingProfile.full_name}
                   </h3>
-                  <Badge variant={viewingProfile.role === 'FACULTY' ? 'warning' : 'primary'} size="sm">
+                  <Badge variant={viewingProfile.role === 'FACULTY' ? 'warning' : 'default'}>
                     {viewingProfile.role}
                   </Badge>
                 </div>
 
-                <p className="font-mono text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">
+                <p className="text-xs text-[#22C55E] font-mono mt-0.5">
                   {viewingProfile.roll_number || viewingProfile.designation}
                 </p>
 
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {viewingProfile.department} {viewingProfile.joining_year ? `• Joining Year ${viewingProfile.joining_year}` : ''}
+                <p className="text-xs text-[#A1AAB8] mt-0.5">
+                  {viewingProfile.department}
                 </p>
               </div>
             </div>
 
             {viewingProfile.bio && (
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
-                  Bio / Focus
-                </span>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-950/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div className="p-3.5 rounded-xl bg-[#11151B] border border-[#27303D]">
+                <h4 className="font-bold text-white text-xs mb-1">About</h4>
+                <p className="text-xs text-[#A1AAB8] leading-relaxed">
                   {viewingProfile.bio}
                 </p>
               </div>
             )}
 
-            {/* Complete Skills List */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
-                Technical Skills & Tools
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {viewingProfile.skills.map((skill, i) => (
-                  <span
-                    key={i}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-100 dark:border-indigo-800"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Interests */}
-            {viewingProfile.interests.length > 0 && (
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
-                  Interests & Domains
-                </span>
+            {viewingProfile.skills && viewingProfile.skills.length > 0 && (
+              <div>
+                <h4 className="font-bold text-white text-xs mb-2">Technical Competencies</h4>
                 <div className="flex flex-wrap gap-1.5">
-                  {viewingProfile.interests.map((int, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium"
-                    >
-                      {int}
+                  {viewingProfile.skills.map((s, idx) => (
+                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[#11151B] text-white border border-[#27303D] text-xs">
+                      {s}
                     </span>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* External Links */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-3 text-xs">
-                {viewingProfile.github_url && (
-                  <a href={viewingProfile.github_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1 font-semibold">
-                    <Code className="w-3.5 h-3.5" />
-                    GitHub
-                  </a>
-                )}
-                {viewingProfile.portfolio_url && (
-                  <a href={viewingProfile.portfolio_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1 font-semibold">
-                    <Globe className="w-3.5 h-3.5" />
-                    Portfolio
-                  </a>
-                )}
+            {viewingProfile.interests && viewingProfile.interests.length > 0 && (
+              <div>
+                <h4 className="font-bold text-white text-xs mb-2">Interests & Activities</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {viewingProfile.interests.map((it, idx) => (
+                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[#11151B] text-[#A1AAB8] border border-[#27303D] text-xs">
+                      {it}
+                    </span>
+                  ))}
+                </div>
               </div>
+            )}
 
-              <Button
-                variant="primary"
-                size="sm"
+            <div className="pt-2">
+              <button
                 onClick={() => {
-                  setInvitingUser(viewingProfile);
+                  const userToInvite = viewingProfile;
                   setViewingProfile(null);
-                  if (myHostedPosts.length > 0) {
-                    setSelectedPostId(myHostedPosts[0].id);
-                  }
+                  handleInviteClick(userToInvite);
                 }}
-                leftIcon={<Mail className="w-3.5 h-3.5" />}
+                className="w-full py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                Invite to Activity
-              </Button>
+                <Mail className="w-4 h-4" />
+                Invite to Opportunity
+              </button>
             </div>
           </div>
         </Modal>
@@ -487,76 +391,77 @@ export const FindPeopleDirectory: React.FC = () => {
           isOpen={Boolean(invitingUser)}
           onClose={() => setInvitingUser(null)}
           title={`Invite ${invitingUser.full_name}`}
-          description={`Invite to join one of your active open opportunities.`}
+          description="Send an invitation to join one of your hosted opportunities."
           maxWidth="md"
         >
-          <div className="p-6">
-            {myHostedPosts.length === 0 ? (
-              <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 text-xs space-y-2">
-                <p className="font-bold">No active hosted opportunities available</p>
-                <p>You must publish an activity, hackathon, or workshop before you can invite peer collaborators.</p>
+          <form onSubmit={handleSendInvite} className="p-6 space-y-4 text-xs">
+            {inviteSuccess ? (
+              <div className="p-4 rounded-xl bg-green-950/60 border border-green-800 text-green-300 text-center space-y-2">
+                <Check className="w-8 h-8 mx-auto text-green-400" />
+                <p className="font-bold text-sm">Invitation Sent!</p>
+                <p className="text-xs text-green-200">
+                  {invitingUser.full_name} has received an in-app collaboration notification.
+                </p>
+              </div>
+            ) : myHostedPosts.length === 0 ? (
+              <div className="space-y-4">
+                <p className="text-[#A1AAB8]">
+                  You do not currently have any open opportunities to invite {invitingUser.full_name} into.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInvitingUser(null);
+                    // trigger create post
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[#22C55E] text-black font-bold cursor-pointer"
+                >
+                  Create Opportunity First
+                </button>
               </div>
             ) : (
-              <form onSubmit={handleSendInvite} className="space-y-4 text-xs">
+              <>
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Select Your Opportunity *
+                  <label className="block text-xs font-semibold text-white mb-1">
+                    Select Opportunity *
                   </label>
                   <select
                     value={selectedPostId}
                     onChange={(e) => setSelectedPostId(e.target.value)}
                     required
-                    aria-label="Select opportunity"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
+                    className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-white text-xs focus:outline-none focus:border-[#22C55E]"
                   >
                     {myHostedPosts.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.title} ({p.filled_slots}/{p.total_slots} filled)
-                      </option>
+                      <option key={p.id} value={p.id}>{p.title}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Personalized Invitation Note
+                  <label className="block text-xs font-semibold text-white mb-1">
+                    Personalized Note (Optional)
                   </label>
                   <textarea
                     rows={3}
                     value={inviteNote}
                     onChange={(e) => setInviteNote(e.target.value)}
-                    placeholder="We loved your robotics/computer vision work and would like to invite you to our team..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
+                    placeholder="e.g. Would love to have your ROS2 / React skills on this project..."
+                    className="w-full px-3 py-2 rounded-xl border border-[#27303D] bg-[#0E121A] text-white text-xs focus:outline-none focus:border-[#22C55E]"
                   />
                 </div>
 
-                {inviteSuccess ? (
-                  <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2">
-                    <Check className="w-4 h-4" />
-                    Invitation dispatched successfully!
-                  </div>
-                ) : (
-                  <div className="flex gap-2 justify-end pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInvitingUser(null)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="sm"
-                      leftIcon={<Send className="w-3.5 h-3.5" />}
-                    >
-                      Send Invitation
-                    </Button>
-                  </div>
-                )}
-              </form>
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Send Direct Invitation
+                  </button>
+                </div>
+              </>
             )}
-          </div>
+          </form>
         </Modal>
       )}
 

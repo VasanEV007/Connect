@@ -28,18 +28,20 @@ export const CalendarModule: React.FC = () => {
 
   // Registered post IDs for active user
   const joinedPostIds = useMemo(() => {
+    if (!currentUser) return [];
     return applications
       .filter(a => a.applicant_id === currentUser.id && a.status === 'ACCEPTED')
       .map(a => a.post_id);
-  }, [applications, currentUser.id]);
+  }, [applications, currentUser]);
 
   const joinedPosts = useMemo(() => {
     return posts.filter(p => joinedPostIds.includes(p.id));
   }, [posts, joinedPostIds]);
 
   const hostedPosts = useMemo(() => {
+    if (!currentUser) return [];
     return posts.filter(p => p.host_id === currentUser.id);
-  }, [posts, currentUser.id]);
+  }, [posts, currentUser]);
 
   // Month navigation
   const prevMonth = () => {

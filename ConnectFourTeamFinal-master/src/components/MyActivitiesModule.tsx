@@ -25,7 +25,9 @@ export const MyActivitiesModule: React.FC = () => {
     setSelectedPostForDetail, 
     setSelectedPostForChat, 
     setSelectedODSlipForView,
-    withdrawApplication 
+    withdrawApplication,
+    setIsAuthModalOpen,
+    setAuthModalMode
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'joined' | 'pending' | 'hosted' | 'od-slips'>('joined');
@@ -33,8 +35,9 @@ export const MyActivitiesModule: React.FC = () => {
 
   // Joined (Accepted)
   const myAcceptedApps = useMemo(() => {
+    if (!currentUser) return [];
     return applications.filter(a => a.applicant_id === currentUser.id && a.status === 'ACCEPTED');
-  }, [applications, currentUser.id]);
+  }, [applications, currentUser]);
 
   const joinedPosts = useMemo(() => {
     return posts.filter(p => myAcceptedApps.some(a => a.post_id === p.id));
@@ -42,26 +45,50 @@ export const MyActivitiesModule: React.FC = () => {
 
   // Pending
   const myPendingApps = useMemo(() => {
+    if (!currentUser) return [];
     return applications.filter(a => a.applicant_id === currentUser.id && a.status === 'PENDING');
-  }, [applications, currentUser.id]);
+  }, [applications, currentUser]);
 
   // Hosted by me
   const hostedByMe = useMemo(() => {
+    if (!currentUser) return [];
     return posts.filter(p => p.host_id === currentUser.id);
-  }, [posts, currentUser.id]);
+  }, [posts, currentUser]);
 
   // My OD Slips
   const myODSlips = useMemo(() => {
+    if (!currentUser) return [];
     return odSlips.filter(s => {
       const app = applications.find(a => a.id === s.application_id);
       return app?.applicant_id === currentUser.id || s.student_roll === currentUser.roll_number;
     });
-  }, [odSlips, applications, currentUser.id, currentUser.roll_number]);
+  }, [odSlips, applications, currentUser]);
 
   const handleWithdraw = (appId: string) => {
     withdrawApplication(appId);
     setWithdrawingId(null);
   };
+
+  if (!currentUser) {
+    return (
+      <div className="max-w-md mx-auto my-12 bg-[#11151B] p-8 rounded-2xl border border-[#27303D] text-center space-y-4 shadow-xl">
+        <FolderCheck className="w-12 h-12 text-[#22C55E] mx-auto" />
+        <h2 className="text-xl font-bold text-white">Sign In to View Your Activities</h2>
+        <p className="text-xs text-[#A1AAB8]">
+          Log in with your official university email to see joined events, application statuses, and verified On-Duty records.
+        </p>
+        <button
+          onClick={() => {
+            setAuthModalMode('LOGIN');
+            setIsAuthModalOpen(true);
+          }}
+          className="px-5 py-2.5 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-black font-bold text-xs cursor-pointer"
+        >
+          Sign In Now
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

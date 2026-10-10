@@ -27,7 +27,7 @@ interface Props {
 export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCategory }) => {
   const { currentUser, createPost, landmarks, setIsMapModalOpen } = useApp();
 
-  const isFaculty = currentUser.role === 'FACULTY';
+  const isFaculty = currentUser ? currentUser.role === 'FACULTY' : false;
 
   const [category, setCategory] = useState<PostCategory>(
     initialCategory || (isFaculty ? 'FACULTY_WORKSHOP' : 'STUDENT_CASUAL')
@@ -122,6 +122,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
       targetRoles: targetRoles.length > 0 ? targetRoles : undefined,
       odAvailable,
       odHours: odAvailable ? odHours : undefined,
+      carpoolOrigin: category === 'CARPOOL' ? carpoolOrigin : undefined,
+      carpoolDestination: category === 'CARPOOL' ? carpoolDestination : undefined,
     });
 
     if (Object.keys(validationErrors).length > 0) {
@@ -171,8 +173,8 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Publish New Campus Opportunity"
-      description={`Posting as: ${currentUser.full_name} (${currentUser.role === 'FACULTY' ? 'Official Faculty' : 'Student Organizer'})`}
+      title="Create Opportunity"
+      description={`Posting as: ${currentUser?.full_name || 'Campus Member'} (${currentUser?.role === 'FACULTY' ? 'Official Faculty' : 'Student Organizer'})`}
       maxWidth="3xl"
     >
       <form onSubmit={handleSubmit} className="p-6 space-y-6 text-xs sm:text-sm">

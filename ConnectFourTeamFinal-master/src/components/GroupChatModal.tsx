@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Post } from '../types';
+import { UserAvatar } from './ui/UserAvatar';
 import { X, Send, Lock, Users, MessageSquare, Shield } from 'lucide-react';
 
 interface Props {
@@ -44,7 +45,6 @@ export const GroupChatModal: React.FC<Props> = ({ post, onClose }) => {
     {
       name: post.host_name,
       role: post.host_role,
-      avatar: post.host_avatar,
       isHost: true,
       roll: undefined,
     },
@@ -53,7 +53,6 @@ export const GroupChatModal: React.FC<Props> = ({ post, onClose }) => {
       .map(a => ({
         name: a.applicant_name,
         role: 'STUDENT' as const,
-        avatar: a.applicant_avatar,
         isHost: false,
         roll: a.applicant_roll,
       }))
@@ -134,7 +133,7 @@ export const GroupChatModal: React.FC<Props> = ({ post, onClose }) => {
                 </div>
               ) : (
                 postMessages.map((msg) => {
-                  const isMe = msg.sender_id === currentUser.id;
+                  const isMe = currentUser ? msg.sender_id === currentUser.id : false;
                   const isHost = msg.sender_id === post.host_id;
 
                   return (
@@ -142,14 +141,8 @@ export const GroupChatModal: React.FC<Props> = ({ post, onClose }) => {
                       key={msg.id}
                       className={`flex gap-3 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}`}
                     >
-                      {/* Avatar */}
-                      <div className="w-8 h-8 rounded-full bg-[#131722] border border-[#232B3C] text-[#22C55E] flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
-                        {msg.sender_avatar ? (
-                          <img src={msg.sender_avatar} alt={msg.sender_name} className="w-full h-full object-cover" />
-                        ) : (
-                          msg.sender_name.charAt(0)
-                        )}
-                      </div>
+                      {/* User Avatar */}
+                      <UserAvatar name={msg.sender_name} role={msg.sender_role} size="sm" />
 
                       {/* Bubble */}
                       <div className={`space-y-1 ${isMe ? 'items-end text-right' : ''}`}>
@@ -235,13 +228,7 @@ export const GroupChatModal: React.FC<Props> = ({ post, onClose }) => {
             <div className="space-y-2">
               {acceptedMembers.map((m, idx) => (
                 <div key={idx} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#131722] transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-[#131722] border border-[#232B3C] text-[#22C55E] flex items-center justify-center font-bold text-xs overflow-hidden">
-                    {m.avatar ? (
-                      <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
-                    ) : (
-                      m.name.charAt(0)
-                    )}
-                  </div>
+                  <UserAvatar name={m.name} role={m.role} size="xs" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
                       <span className="text-xs font-semibold text-white truncate">

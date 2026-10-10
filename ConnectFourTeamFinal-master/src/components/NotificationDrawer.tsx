@@ -44,7 +44,7 @@ export const NotificationDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   // Notifications belonging to current user
-  const userNotifications = notifications.filter(n => n.user_id === currentUser.id);
+  const userNotifications = currentUser ? notifications.filter(n => n.user_id === currentUser.id) : [];
   const unreadCount = userNotifications.filter(n => !n.read).length;
 
   return (

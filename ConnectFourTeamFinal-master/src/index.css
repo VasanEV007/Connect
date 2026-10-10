@@ -6,23 +6,23 @@
     --font-heading: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-    /* Haveloc Placement Portal Inspired Palette */
+    /* Connect Design Tokens */
     --color-primary: #22c55e;
     --color-primary-hover: #16a34a;
     --color-primary-light: rgba(34, 197, 94, 0.12);
     
-    --color-page-bg: #000000;
-    --color-surface: #0a0d14;
-    --color-surface-hover: #111520;
-    --color-surface-card: #0d1017;
+    --color-page-bg: #090b0f;
+    --color-surface: #11151b;
+    --color-surface-hover: #171c24;
+    --color-surface-card: #11151b;
     
-    --color-text-main: #ffffff;
-    --color-text-muted: #94a3b8;
+    --color-text-main: #f8fafc;
+    --color-text-muted: #a1aab8;
     --color-text-subtle: #64748b;
     
-    --color-border: #1e2433;
-    --color-border-subtle: #161b26;
-    --color-border-hover: #2d3748;
+    --color-border: #27303d;
+    --color-border-subtle: #1e2433;
+    --color-border-hover: #384355;
     
     --color-success: #22c55e;
     --color-warning: #f59e0b;
@@ -37,8 +37,8 @@
 
   body {
     font-family: var(--font-sans);
-    background-color: #000000;
-    color: #f8fafc;
+    background-color: var(--color-page-bg);
+    color: var(--color-text-main);
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -58,34 +58,34 @@
   }
 }
 
-/* Haveloc-style dark scrollbar */
+/* Connect dark scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #05070a;
+  background: #090b0f;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e2433;
+  background: #27303d;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #22c55e;
 }
 
-/* Haveloc Surface Card */
+/* Connect Surface Card */
 .surface-card {
-  background-color: #0d1017;
-  border: 1px solid #1e2433;
+  background-color: #11151b;
+  border: 1px solid #27303d;
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
 }
 .surface-card:hover {
-  border-color: #2d3748;
+  border-color: #384355;
 }
 
-/* Print Styles for Official Amrita On-Duty (OD) Certificate */
+/* Print Styles for Verified On-Duty (OD) Certificate */
 @media print {
   body * {
     visibility: hidden;
