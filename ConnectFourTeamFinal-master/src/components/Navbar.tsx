@@ -109,28 +109,6 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
 
   return (
     <header className="sticky top-0 z-40 bg-[#090B0F] border-b border-[#27303D] transition-colors select-none">
-      
-      {/* Amrita Campus Top Rail */}
-      <div className="bg-[#05070A] text-[#A1AAB8] px-4 py-1 text-xs font-sans flex items-center justify-between border-b border-[#1A1F2C]">
-        <div className="flex items-center gap-2 max-w-xl truncate">
-          <span className="font-serif font-black text-[#22C55E] text-xs">ॐ</span>
-          <span className="font-bold text-[#F8FAFC] tracking-wider text-[11px]">
-            Amrita Vishwa Vidyapeetham
-          </span>
-          <span className="text-[#64748B] hidden sm:inline">• Ettimadai Campus, Coimbatore</span>
-        </div>
-
-        <div className="flex items-center gap-3 text-[11px]">
-          <button
-            onClick={() => setIsMapModalOpen(true)}
-            className="flex items-center gap-1.5 text-[#22C55E] hover:text-[#16A34A] transition-colors font-medium cursor-pointer"
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            Campus Navigator
-          </button>
-        </div>
-      </div>
-
       {/* Main Header Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-3">
@@ -183,6 +161,16 @@ export const Navbar: React.FC<Props> = ({ onOpenNotifications }) => {
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Create Opportunity</span>
+            </button>
+
+            {/* Campus Navigator Map */}
+            <button
+              onClick={() => setIsMapModalOpen(true)}
+              className="p-2 rounded-lg border border-[#27303D] bg-[#11151B] hover:border-[#384355] hover:text-[#22C55E] text-[#A1AAB8] relative transition-colors cursor-pointer"
+              title="Campus Navigator"
+              aria-label="Campus Navigator"
+            >
+              <MapPin className="w-4 h-4" />
             </button>
 
             {/* Notification Bell */}

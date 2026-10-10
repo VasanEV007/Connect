@@ -51,7 +51,7 @@ export const EventFeed: React.FC = () => {
     { key: 'ALL', label: 'All Opportunities' },
     { key: 'FACULTY_RESEARCH', label: 'Research' },
     { key: 'FACULTY_WORKSHOP', label: 'Workshops' },
-    { key: 'STUDENT_CASUAL', label: 'Hackathons & Tech' },
+    { key: 'STUDENT_CASUAL', label: 'Casual & Sports' },
     { key: 'STUDENT_CREATIVE', label: 'Creative & Media' },
     { key: 'FACULTY_VOLUNTEER', label: 'Volunteering' },
     { key: 'CARPOOL', label: 'Carpool & Travel', icon: <Car className="w-3.5 h-3.5" /> },
@@ -146,6 +146,8 @@ export const EventFeed: React.FC = () => {
         return <Badge variant="default">Volunteering</Badge>;
       case 'CARPOOL':
         return <Badge variant="default">Carpool & Travel</Badge>;
+      case 'STUDENT_CASUAL':
+        return <Badge variant="default">Casual & Sports</Badge>;
       case 'STUDENT_CREATIVE':
         return <Badge variant="default">Creative & Media</Badge>;
       default:

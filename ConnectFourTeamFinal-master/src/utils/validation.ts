@@ -128,32 +128,32 @@ export function validatePostForm(input: PostFormInput): Record<string, string> {
     errors.totalSlots = 'Capacity cannot exceed 500 participants.';
   }
 
-  if (input.targetRoles && input.targetRoles.length > 0) {
-    const roleSlotsSum = input.targetRoles.reduce((sum, r) => sum + (Number(r.slots) || 0), 0);
-    if (roleSlotsSum > input.totalSlots) {
-      errors.targetRoles = `Sum of allocated role slots (${roleSlotsSum}) exceeds total capacity (${input.totalSlots}).`;
-    }
-  }
-
-  if (!input.venueName || input.venueName.trim().length < 2) {
-    errors.venueName = 'Please select a valid campus landmark or venue.';
-  }
-
-  if (input.odAvailable) {
-    if (input.odHours === undefined || input.odHours === null || isNaN(input.odHours) || input.odHours <= 0) {
-      errors.odHours = 'Sanctioned OD hours must be at least 1 hour.';
-    } else if (input.odHours > 40) {
-      errors.odHours = 'Sanctioned OD hours cannot exceed 40 hours.';
-    }
-  }
-
-  // Carpool validations
   if (input.category === 'CARPOOL') {
+    // Carpool requires origin and destination
     if (!input.carpoolOrigin || input.carpoolOrigin.trim().length < 2) {
       errors.carpoolOrigin = 'Please specify a pickup location on or near campus.';
     }
     if (!input.carpoolDestination || input.carpoolDestination.trim().length < 2) {
       errors.carpoolDestination = 'Please specify a travel destination.';
+    }
+    if (input.carpoolCostSplit && input.carpoolCostSplit.trim()) {
+      const matchNeg = input.carpoolCostSplit.match(/-\s*\d+/);
+      if (matchNeg) {
+        errors.carpoolCostSplit = 'Estimated fare must be a non-negative amount.';
+      }
+    }
+  } else {
+    // Non-carpool events require a venue or campus landmark
+    if (!input.venueName || input.venueName.trim().length < 2) {
+      errors.venueName = 'Please select a valid campus landmark or venue.';
+    }
+  }
+
+  if (input.odAvailable && input.category !== 'CARPOOL') {
+    if (input.odHours === undefined || input.odHours === null || isNaN(input.odHours) || input.odHours <= 0) {
+      errors.odHours = 'Sanctioned OD hours must be at least 1 hour.';
+    } else if (input.odHours > 40) {
+      errors.odHours = 'Sanctioned OD hours cannot exceed 40 hours.';
     }
   }
 

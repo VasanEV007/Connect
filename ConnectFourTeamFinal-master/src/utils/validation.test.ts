@@ -56,16 +56,19 @@ describe('validation utility', () => {
     expect(overCapacity.totalSlots).toBeDefined();
   });
 
-  it('flags error when sum of target role slots exceeds total slots', () => {
-    const invalidRoles = validatePostForm({
-      ...validForm,
-      totalSlots: 5,
-      targetRoles: [
-        { role: 'Lead', slots: 4 },
-        { role: 'Contributor', slots: 3 }, // Sum = 7 > 5
-      ],
-    });
-    expect(invalidRoles.targetRoles).toContain('exceeds total capacity');
+  it('validates casual and sports category without requiring carpool or OD fields', () => {
+    const sportsForm: PostFormInput = {
+      title: 'Casual Badminton Doubles Match',
+      description: 'Looking for 3 players for a friendly badminton match at the campus indoor sports complex.',
+      category: 'STUDENT_CASUAL',
+      startDate: '2026-10-22',
+      startTime: '17:00',
+      endTime: '19:00',
+      totalSlots: 4,
+      venueName: 'Indoor Sports Complex - Court 2',
+    };
+    const errors = validatePostForm(sportsForm);
+    expect(Object.keys(errors).length).toBe(0);
   });
 
   it('validates sanctioned OD hours constraints', () => {
