@@ -34,12 +34,12 @@ describe('validation utility', () => {
     expect(longTitle.title).toBeDefined();
   });
 
-  it('flags error when description is missing or empty, but accepts short descriptions without 20 char limit', () => {
-    const emptyDesc = validatePostForm({ ...validForm, description: '   ' });
-    expect(emptyDesc.description).toBeDefined();
+  it('allows event description to be optional or empty without error', () => {
+    const emptyDesc = validatePostForm({ ...validForm, description: '' });
+    expect(emptyDesc.description).toBeUndefined();
 
-    const shortDesc = validatePostForm({ ...validForm, description: 'Short desc' });
-    expect(shortDesc.description).toBeUndefined();
+    const omittedDesc = validatePostForm({ ...validForm, description: undefined });
+    expect(omittedDesc.description).toBeUndefined();
   });
 
   it('flags error when end time is earlier than or equal to start time', () => {

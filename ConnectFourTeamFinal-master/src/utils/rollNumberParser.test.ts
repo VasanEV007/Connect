@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAmritaRollNumber, getRollSummaryLabel } from './rollNumberParser';
+import { parseAmritaRollNumber, getRollSummaryLabel, parseAmritaEmail } from './rollNumberParser';
 
 describe('rollNumberParser utility', () => {
   it('correctly parses standard Amrita Coimbatore B.Tech roll number', () => {
@@ -79,5 +79,26 @@ describe('rollNumberParser utility', () => {
     expect(label).toContain('ARE');
     expect(label).toContain('2024');
     expect(label).toContain('CB');
+  });
+
+  it('correctly parses student email CB.EN.U4ARE24044@cb.students.amrita.edu and autofills verified details', () => {
+    const res = parseAmritaEmail('CB.EN.U4ARE24044@cb.students.amrita.edu');
+    expect(res.role).toBe('STUDENT');
+    expect(res.isVerified).toBe(true);
+    expect(res.rollNumber).toBe('CB.EN.U4ARE24044');
+    expect(res.campusCode).toBe('CB');
+    expect(res.campusName).toContain('Coimbatore');
+    expect(res.deptCode).toBe('ARE');
+    expect(res.department).toBe('Automation and Robotics Engineering');
+    expect(res.joiningYear).toBe(2024);
+  });
+
+  it('correctly detects faculty email name@cb.amrita.edu while logging in or registering', () => {
+    const res = parseAmritaEmail('anand@cb.amrita.edu');
+    expect(res.role).toBe('FACULTY');
+    expect(res.isVerified).toBe(true);
+    expect(res.campusCode).toBe('CB');
+    expect(res.campusName).toContain('Coimbatore');
+    expect(res.designation).toBe('Assistant Professor');
   });
 });

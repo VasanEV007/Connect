@@ -21,6 +21,7 @@ import {
   canIssueODSlip,
   canAccessFacultyPortal
 } from '../utils/security';
+import { parseAmritaEmail } from '../utils/rollNumberParser';
 import {
   signUpWithEmail,
   signInWithEmail,
@@ -525,22 +526,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: error.message };
     }
 
+    const parsedEmail = parseAmritaEmail(email);
     const userId = user?.id || `user-${Date.now()}`;
     const newProfile: UserProfile = {
       id: userId,
-      full_name: initialProfile?.full_name || email.split('@')[0],
+      full_name: initialProfile?.full_name || parsedEmail.suggestedName || email.split('@')[0],
       email: email.trim().toLowerCase(),
-      role: initialProfile?.role || 'STUDENT',
-      roll_number: initialProfile?.roll_number,
-      department: initialProfile?.department || 'Engineering',
-      joining_year: initialProfile?.joining_year,
-      designation: initialProfile?.designation,
+      role: initialProfile?.role || parsedEmail.role,
+      roll_number: initialProfile?.roll_number || parsedEmail.rollNumber,
+      department: initialProfile?.department || parsedEmail.department || 'Engineering',
+      joining_year: initialProfile?.joining_year || parsedEmail.joiningYear,
+      designation: initialProfile?.designation || (parsedEmail.role === 'FACULTY' ? (parsedEmail.designation || 'Assistant Professor') : undefined),
       bio: initialProfile?.bio || '',
       skills: initialProfile?.skills || ['Collaboration'],
       interests: initialProfile?.interests || ['Campus Events'],
       github_url: initialProfile?.github_url,
       linkedin_url: initialProfile?.linkedin_url,
-      is_verified: initialProfile?.role === 'STUDENT',
+      is_verified: parsedEmail.isVerified || initialProfile?.is_verified,
       created_at: new Date().toISOString(),
     };
 
@@ -560,22 +562,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: error.message };
     }
 
+    const parsedEmail = parseAmritaEmail(email);
+
     // Load profile
     const existing = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
+      let needsSave = false;
+      // Auto-detect faculty role from email
+      if (parsedEmail.role === 'FACULTY' && existing.role !== 'FACULTY') {
+        existing.role = 'FACULTY';
+        existing.is_verified = true;
+        needsSave = true;
+      } else if (parsedEmail.role === 'STUDENT' && parsedEmail.rollNumber && !existing.roll_number) {
+        existing.roll_number = parsedEmail.rollNumber;
+        existing.department = parsedEmail.department || existing.department;
+        existing.joining_year = parsedEmail.joiningYear || existing.joining_year;
+        existing.is_verified = true;
+        needsSave = true;
+      }
+      if (needsSave) {
+        saveProfile(existing);
+      }
       setCurrentUser(existing);
       return { success: true };
     } else if (user) {
       const fallbackProfile: UserProfile = {
         id: user.id,
-        full_name: email.split('@')[0],
+        full_name: parsedEmail.suggestedName || email.split('@')[0],
         email: email.toLowerCase(),
-        role: 'STUDENT',
-        department: 'General Engineering',
+        role: parsedEmail.role,
+        roll_number: parsedEmail.rollNumber,
+        department: parsedEmail.department || 'Engineering',
+        joining_year: parsedEmail.joiningYear,
+        designation: parsedEmail.role === 'FACULTY' ? (parsedEmail.designation || 'Assistant Professor') : undefined,
         skills: ['General Collaboration'],
         interests: ['Campus Activities'],
+        is_verified: parsedEmail.isVerified,
         created_at: new Date().toISOString(),
       };
+      saveProfile(fallbackProfile);
+      setAllUsers(prev => [fallbackProfile, ...prev.filter(u => u.id !== fallbackProfile.id)]);
       setCurrentUser(fallbackProfile);
       return { success: true };
     }

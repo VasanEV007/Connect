@@ -77,21 +77,9 @@ export const Logo: React.FC<LogoProps> = ({
       </div>
 
       {showWordmark && (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <span className={`font-bold ${titleSizeClasses[size]} tracking-tight text-[var(--color-text-main)]`}>
-              Connect
-            </span>
-            {showCampusTag && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wide uppercase bg-[var(--color-surface-hover)] text-[var(--color-primary)] border border-[var(--color-border)]">
-                Amrita
-              </span>
-            )}
-          </div>
-          <span className="text-[10px] text-[var(--color-text-muted)] font-medium leading-none hidden sm:block">
-            Connect with people. Discover events. Build together.
-          </span>
-        </div>
+        <span className={`font-bold ${titleSizeClasses[size]} tracking-tight text-[var(--color-text-main)]`}>
+          Connect
+        </span>
       )}
     </div>
   );

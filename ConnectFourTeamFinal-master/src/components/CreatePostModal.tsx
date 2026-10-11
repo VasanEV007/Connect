@@ -421,8 +421,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
           />
 
           <Textarea
-            label={category === 'CARPOOL' ? 'Travel Plan & Details *' : 'Description & Scope *'}
-            required
+            label={category === 'CARPOOL' ? 'Travel Plan & Details (Optional)' : 'Description & Scope (Optional)'}
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}

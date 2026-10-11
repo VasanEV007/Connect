@@ -5,7 +5,7 @@ export interface ValidationError {
 
 export interface PostFormInput {
   title: string;
-  description: string;
+  description?: string;
   category: string;
   startDate: string;
   startTime: string;
@@ -91,9 +91,7 @@ export function validatePostForm(input: PostFormInput): Record<string, string> {
     errors.title = 'Title must be 120 characters or fewer.';
   }
 
-  if (!input.description || !input.description.trim()) {
-    errors.description = 'Please provide an event description.';
-  }
+  // Description is optional
 
   if (!input.startDate) {
     errors.startDate = 'Event date is required.';

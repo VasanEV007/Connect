@@ -68,9 +68,6 @@ const MainLayout: React.FC = () => {
                   Ettimadai Campus
                 </span>
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)]">
-                Connect with people. Discover events. Build together.
-              </p>
             </div>
           </div>
 

@@ -131,3 +131,115 @@ export function getOrdinalSuffix(n: number): string {
   if (n === 3) return 'rd';
   return 'th';
 }
+
+export interface ParsedAmritaEmail {
+  email: string;
+  isAmrita: boolean;
+  role: 'STUDENT' | 'FACULTY';
+  isVerified: boolean;
+  rollNumber?: string;
+  campusCode?: string;
+  campusName?: string;
+  schoolCode?: string;
+  schoolName?: string;
+  degreeCode?: string;
+  degreeName?: string;
+  deptCode?: string;
+  department?: string;
+  joiningYear?: number;
+  currentYearStudy?: number;
+  rollId?: string;
+  designation?: string;
+  suggestedName?: string;
+}
+
+/**
+ * Parses official Amrita university email addresses.
+ * - Students: CB.EN.U4ARE24044@cb.students.amrita.edu
+ * - Faculty: name@cb.amrita.edu / name@amrita.edu
+ */
+export function parseAmritaEmail(rawEmail: string): ParsedAmritaEmail {
+  if (!rawEmail || typeof rawEmail !== 'string') {
+    return {
+      email: '',
+      isAmrita: false,
+      role: 'STUDENT',
+      isVerified: false,
+    };
+  }
+
+  const email = rawEmail.trim().toLowerCase();
+  const atIndex = email.indexOf('@');
+  if (atIndex === -1) {
+    return {
+      email,
+      isAmrita: false,
+      role: 'STUDENT',
+      isVerified: false,
+    };
+  }
+
+  const prefix = email.slice(0, atIndex).trim().toUpperCase();
+  const domain = email.slice(atIndex + 1).trim().toLowerCase();
+
+  const isAmritaDomain = 
+    domain.endsWith('amrita.edu') || 
+    domain.endsWith('cb.amrita.edu') || 
+    domain.endsWith('students.amrita.edu');
+
+  // Check if prefix contains or matches an Amrita roll number (e.g. CB.EN.U4ARE24044)
+  const parsedRoll = parseAmritaRollNumber(prefix);
+
+  if (parsedRoll.isValid) {
+    return {
+      email,
+      isAmrita: isAmritaDomain,
+      role: 'STUDENT',
+      isVerified: true,
+      rollNumber: parsedRoll.rawInput,
+      campusCode: parsedRoll.campusCode,
+      campusName: parsedRoll.campusName,
+      schoolCode: parsedRoll.schoolCode,
+      schoolName: parsedRoll.schoolName,
+      degreeCode: parsedRoll.degreeCode,
+      degreeName: parsedRoll.degreeName,
+      deptCode: parsedRoll.deptCode,
+      department: parsedRoll.deptName,
+      joiningYear: parsedRoll.joiningYear,
+      currentYearStudy: parsedRoll.currentYearStudy,
+      rollId: parsedRoll.rollId,
+    };
+  }
+
+  // Check if faculty domain (e.g., name@cb.amrita.edu or name@amrita.edu without 'students')
+  const isStudentDomain = domain.includes('students');
+
+  if (!isStudentDomain && isAmritaDomain) {
+    const campusCode = domain.startsWith('cb.') ? 'CB' : 'CB';
+    const cleanName = prefix
+      .replace(/[._-]/g, ' ')
+      .toLowerCase()
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+
+    return {
+      email,
+      isAmrita: true,
+      role: 'FACULTY',
+      isVerified: true,
+      campusCode,
+      campusName: CAMPUS_MAP[campusCode] || 'Coimbatore (Ettimadai)',
+      department: 'Engineering',
+      designation: 'Assistant Professor',
+      suggestedName: cleanName || 'Faculty Member',
+    };
+  }
+
+  return {
+    email,
+    isAmrita: isAmritaDomain,
+    role: 'STUDENT',
+    isVerified: false,
+  };
+}
