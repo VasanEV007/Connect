@@ -365,21 +365,46 @@ export const CAMPUS_SEED_PROFILES: UserProfile[] = [
   }
 ];
 
+export function mapDbRecordToProfile(raw: any): UserProfile {
+  return {
+    id: String(raw.id),
+    full_name: raw.full_name || 'Amrita Member',
+    email: raw.email || '',
+    role: (raw.role as UserRole) || 'STUDENT',
+    roll_number: raw.roll_number || undefined,
+    department: raw.department || 'Engineering',
+    joining_year: raw.joining_year ? Number(raw.joining_year) : undefined,
+    gender: raw.gender || undefined,
+    bio: raw.bio || '',
+    portfolio_url: raw.portfolio_url || undefined,
+    github_url: raw.github_url || undefined,
+    linkedin_url: raw.linkedin_url || undefined,
+    skills: Array.isArray(raw.skills) ? raw.skills : [],
+    interests: Array.isArray(raw.interests) ? raw.interests : [],
+    designation: raw.designation || undefined,
+    cabin_or_lab: raw.cabin_or_lab || undefined,
+    is_verified: Boolean(raw.is_verified),
+    created_at: raw.created_at || new Date().toISOString(),
+  };
+}
+
 export function getFallbackProfiles(): UserProfile[] {
   try {
     const data = localStorage.getItem(FALLBACK_KEYS.PROFILES);
-    const local = data ? JSON.parse(data) : [];
-    const map = new Map<string, UserProfile>();
-    CAMPUS_SEED_PROFILES.forEach(p => map.set(p.id, p));
-    local.forEach((p: UserProfile) => map.set(p.id, p));
-    return Array.from(map.values());
-  } catch {
-    return CAMPUS_SEED_PROFILES;
-  }
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch {}
+  return CAMPUS_SEED_PROFILES;
 }
 
 export function saveFallbackProfiles(profiles: UserProfile[]) {
-  localStorage.setItem(FALLBACK_KEYS.PROFILES, JSON.stringify(profiles));
+  try {
+    localStorage.setItem(FALLBACK_KEYS.PROFILES, JSON.stringify(profiles));
+  } catch {}
 }
 
 export async function fetchProfileById(userId: string): Promise<UserProfile | null> {
@@ -391,7 +416,7 @@ export async function fetchProfileById(userId: string): Promise<UserProfile | nu
       .maybeSingle();
 
     if (!error && data) {
-      return data as UserProfile;
+      return mapDbRecordToProfile(data);
     }
   }
 
@@ -400,72 +425,101 @@ export async function fetchProfileById(userId: string): Promise<UserProfile | nu
 }
 
 export async function fetchAllProfiles(): Promise<UserProfile[]> {
-  const map = new Map<string, UserProfile>();
-  CAMPUS_SEED_PROFILES.forEach(p => map.set(p.id, p));
-
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      data.forEach((raw: any) => {
-        map.set(raw.id, {
-          id: String(raw.id),
-          full_name: raw.full_name || 'Amrita Member',
-          email: raw.email || '',
-          role: (raw.role as UserRole) || 'STUDENT',
-          roll_number: raw.roll_number || undefined,
-          department: raw.department || 'Engineering',
-          joining_year: raw.joining_year ? Number(raw.joining_year) : undefined,
-          gender: raw.gender,
-          bio: raw.bio || '',
-          portfolio_url: raw.portfolio_url,
-          github_url: raw.github_url,
-          linkedin_url: raw.linkedin_url,
-          skills: Array.isArray(raw.skills) ? raw.skills : [],
-          interests: Array.isArray(raw.interests) ? raw.interests : [],
-          designation: raw.designation,
-          cabin_or_lab: raw.cabin_or_lab,
-          is_verified: Boolean(raw.is_verified),
-          created_at: raw.created_at || new Date().toISOString(),
-        });
-      });
+      if (!error && data && data.length > 0) {
+        const dbProfiles: UserProfile[] = data.map((raw: any) => mapDbRecordToProfile(raw));
+        // Cache strictly the genuine profiles in localStorage so they load instantly on next refresh
+        saveFallbackProfiles(dbProfiles);
+        return dbProfiles;
+      } else if (error) {
+        console.error('Supabase fetchAllProfiles error:', error);
+      }
+    } catch (err) {
+      console.error('Supabase fetchAllProfiles caught error:', err);
     }
   }
 
-  // Also include localStorage customized profiles
-  const local = getFallbackProfiles();
-  local.forEach(p => map.set(p.id, p));
-
-  return Array.from(map.values());
+  // Fallback to locally cached profiles if offline or unconfigured
+  return getFallbackProfiles();
 }
 
 export async function saveProfile(profile: UserProfile): Promise<{ success: boolean; error: Error | null }> {
-  if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(profile, { onConflict: 'id' });
-    if (!error) {
-      const currentList = getFallbackProfiles();
-      const idx = currentList.findIndex(p => p.id === profile.id);
-      if (idx >= 0) currentList[idx] = profile;
-      else currentList.unshift(profile);
-      saveFallbackProfiles(currentList);
-      return { success: true, error: null };
+  // Ensure profile has a valid UUID format for PostgreSQL UUID column
+  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(profile.id);
+  if (!isValidUuid) {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      profile.id = crypto.randomUUID();
     }
   }
 
-  // Fallback: save to localStorage
-  const profiles = getFallbackProfiles();
-  const existingIdx = profiles.findIndex(p => p.id === profile.id);
-  if (existingIdx >= 0) {
-    profiles[existingIdx] = profile;
-  } else {
-    profiles.unshift(profile);
+  // Update local fallback cache immediately
+  const localList = getFallbackProfiles();
+  const idx = localList.findIndex(p => p.id === profile.id || p.email.toLowerCase() === profile.email.toLowerCase());
+  if (idx >= 0) localList[idx] = profile;
+  else localList.unshift(profile);
+  saveFallbackProfiles(localList);
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const dbPayload: any = {
+        id: profile.id,
+        full_name: profile.full_name || 'Amrita Member',
+        email: profile.email.trim().toLowerCase(),
+        role: profile.role || 'STUDENT',
+        department: profile.department || 'Engineering',
+        skills: Array.isArray(profile.skills) ? profile.skills : [],
+        interests: Array.isArray(profile.interests) ? profile.interests : [],
+        is_verified: Boolean(profile.is_verified),
+        updated_at: new Date().toISOString()
+      };
+
+      if (profile.roll_number) dbPayload.roll_number = profile.roll_number;
+      if (profile.joining_year) dbPayload.joining_year = Number(profile.joining_year);
+      if (profile.gender && ['Male', 'Female', 'Other', 'Prefer not to say'].includes(profile.gender)) {
+        dbPayload.gender = profile.gender;
+      }
+      if (profile.bio) dbPayload.bio = profile.bio;
+      if (profile.portfolio_url) dbPayload.portfolio_url = profile.portfolio_url;
+      if (profile.github_url) dbPayload.github_url = profile.github_url;
+      if (profile.linkedin_url) dbPayload.linkedin_url = profile.linkedin_url;
+      if (profile.designation) dbPayload.designation = profile.designation;
+      if (profile.cabin_or_lab) dbPayload.cabin_or_lab = profile.cabin_or_lab;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(dbPayload, { onConflict: 'id' })
+        .select();
+
+      if (error) {
+        console.error('Supabase saveProfile error:', error);
+        // If conflict on unique email, update by email
+        if (error.code === '23505' || error.message?.includes('profiles_email_key')) {
+          const { error: updateErr } = await supabase
+            .from('profiles')
+            .update(dbPayload)
+            .eq('email', profile.email.trim().toLowerCase());
+          if (!updateErr) {
+            return { success: true, error: null };
+          }
+          return { success: false, error: new Error(updateErr.message) };
+        }
+        return { success: false, error: new Error(error.message) };
+      }
+
+      console.log('Profile saved successfully to Supabase:', data);
+      return { success: true, error: null };
+    } catch (err: any) {
+      console.error('Supabase saveProfile exception:', err);
+      return { success: false, error: err instanceof Error ? err : new Error(String(err)) };
+    }
   }
-  saveFallbackProfiles(profiles);
+
   return { success: true, error: null };
 }
 

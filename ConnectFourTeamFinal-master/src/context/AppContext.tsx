@@ -53,6 +53,7 @@ import {
   mapDbRecordToMessage,
   mapDbRecordToApplication,
   mapDbRecordToPost,
+  mapDbRecordToProfile,
   fetchAllProfiles,
   saveProfile,
   supabase
@@ -354,7 +355,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
         )
-        // 4. Realtime Broadcast for instant zero-latency peer messaging
+        // 4. Profiles changes (realtime user registrations & updates)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profiles' },
+          (payload) => {
+            try {
+              if ((payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') && payload.new) {
+                const updatedProf = mapDbRecordToProfile(payload.new);
+                setAllUsers(prev => [updatedProf, ...prev.filter(u => u.id !== updatedProf.id && u.email.toLowerCase() !== updatedProf.email.toLowerCase())]);
+              } else if (payload.eventType === 'DELETE' && payload.old) {
+                setAllUsers(prev => prev.filter(u => u.id !== String(payload.old.id)));
+              }
+            } catch (err) {
+              console.warn('Realtime profile sync failed:', err);
+            }
+          }
+        )
+        // 5. Realtime Broadcast for instant zero-latency peer messaging
         .on(
           'broadcast',
           { event: 'new-chat-message' },
@@ -505,14 +523,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateCurrentUserProfile = (updates: Partial<UserProfile>) => {
+  const updateCurrentUserProfile = async (updates: Partial<UserProfile>) => {
     if (!currentUser) return;
     // Disallow self-modification of role or verified flag
     const { role: _r, is_verified: _v, ...permittedUpdates } = updates;
     const updated: UserProfile = { ...currentUser, ...permittedUpdates };
     setCurrentUserState(updated);
-    saveProfile(updated);
     setAllUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    await saveProfile(updated);
   };
 
   // Register real account (College Email + Password)
@@ -521,13 +539,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     password: string, 
     initialProfile?: Partial<UserProfile>
   ): Promise<{ success: boolean; userId?: string; message?: string }> => {
-    const { user, error } = await signUpWithEmail(email, password);
-    if (error) {
-      return { success: false, message: error.message };
+    let user: any = null;
+    const authRes = await signUpWithEmail(email, password);
+    if (authRes.error) {
+      // If user already exists in Supabase auth, authenticate with their password
+      if (
+        authRes.error.message?.toLowerCase().includes('already registered') || 
+        (authRes.error as any).code === 'user_already_exists'
+      ) {
+        const signinRes = await signInWithEmail(email, password);
+        if (signinRes.user) {
+          user = signinRes.user;
+        } else {
+          return { 
+            success: false, 
+            message: 'This email is already registered. Please sign in with your password.' 
+          };
+        }
+      } else {
+        return { success: false, message: authRes.error.message };
+      }
+    } else {
+      user = authRes.user;
     }
 
     const parsedEmail = parseAmritaEmail(email);
-    const userId = user?.id || `user-${Date.now()}`;
+    // Ensure userId is ALWAYS a valid RFC4122 v4 UUID for database compatibility
+    const isValidUserUuid = user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(user.id);
+    const userId = isValidUserUuid
+      ? user.id
+      : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'a0000000-0000-4000-8000-' + Date.now().toString().padStart(12, '0'));
+
     const newProfile: UserProfile = {
       id: userId,
       full_name: initialProfile?.full_name || parsedEmail.suggestedName || email.split('@')[0],
@@ -538,17 +580,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       joining_year: initialProfile?.joining_year || parsedEmail.joiningYear,
       designation: initialProfile?.designation || (parsedEmail.role === 'FACULTY' ? (parsedEmail.designation || 'Assistant Professor') : undefined),
       bio: initialProfile?.bio || '',
-      skills: initialProfile?.skills || ['Collaboration'],
-      interests: initialProfile?.interests || ['Campus Events'],
+      skills: initialProfile?.skills && initialProfile.skills.length > 0 ? initialProfile.skills : ['Collaboration'],
+      interests: initialProfile?.interests && initialProfile.interests.length > 0 ? initialProfile.interests : ['Campus Events'],
       github_url: initialProfile?.github_url,
       linkedin_url: initialProfile?.linkedin_url,
-      is_verified: parsedEmail.isVerified || initialProfile?.is_verified,
+      is_verified: parsedEmail.isVerified || initialProfile?.is_verified || false,
       created_at: new Date().toISOString(),
     };
 
     setCurrentUser(newProfile);
-    saveProfile(newProfile);
-    setAllUsers(prev => [newProfile, ...prev.filter(u => u.id !== newProfile.id)]);
+    setAllUsers(prev => [newProfile, ...prev.filter(u => u.id !== newProfile.id && u.email.toLowerCase() !== newProfile.email.toLowerCase())]);
+    await saveProfile(newProfile);
     return { success: true, userId, message: 'Account registered successfully.' };
   };
 
@@ -564,8 +606,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const parsedEmail = parseAmritaEmail(email);
 
-    // Load profile
-    const existing = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    // 1. Try finding in current allUsers state
+    let existing = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    // 2. If not found in memory, try fetching directly from Supabase profiles table
+    if (!existing && isSupabaseConfigured() && supabase) {
+      const { data: dbProf } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+      if (dbProf) {
+        existing = mapDbRecordToProfile(dbProf);
+        setAllUsers(prev => [existing!, ...prev.filter(u => u.id !== existing!.id)]);
+      }
+    }
+
     if (existing) {
       let needsSave = false;
       // Auto-detect faculty role from email
@@ -581,7 +637,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         needsSave = true;
       }
       if (needsSave) {
-        saveProfile(existing);
+        await saveProfile(existing);
       }
       setCurrentUser(existing);
       return { success: true };
@@ -600,9 +656,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         is_verified: parsedEmail.isVerified,
         created_at: new Date().toISOString(),
       };
-      saveProfile(fallbackProfile);
       setAllUsers(prev => [fallbackProfile, ...prev.filter(u => u.id !== fallbackProfile.id)]);
       setCurrentUser(fallbackProfile);
+      await saveProfile(fallbackProfile);
       return { success: true };
     }
 
