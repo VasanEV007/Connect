@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Post } from '../types';
 import { ClashDetail } from '../utils/clashDetector';
 import { UserAvatar } from './ui/UserAvatar';
+import { Badge } from './ui/Badge';
 import { 
   X, 
   Calendar, 
@@ -19,7 +20,9 @@ import {
   Sparkles,
   DollarSign,
   MessageSquare,
-  Send
+  Send,
+  Check,
+  UserCheck
 } from 'lucide-react';
 
 interface Props {
@@ -31,6 +34,7 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
   const { 
     currentUser, 
     joinPost, 
+    reviewApplication,
     applications, 
     checkScheduleClash, 
     setSelectedPostForChat, 
@@ -41,6 +45,8 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
   const [applicantNote, setApplicantNote] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitFeedback, setSubmitFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [reviewingAppId, setReviewingAppId] = useState<string | null>(null);
+  const [hostReviewFeedback, setHostReviewFeedback] = useState<{ appId: string; type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,7 +64,28 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
   const existingApp = currentUser ? applications.find(a => a.post_id === post.id && a.applicant_id === currentUser.id) : undefined;
   const isAccepted = existingApp?.status === 'ACCEPTED';
   const isPending = existingApp?.status === 'PENDING';
+  const isRejected = existingApp?.status === 'REJECTED';
   const isFull = post.filled_slots >= post.total_slots;
+
+  const postPendingApps = applications.filter(a => a.post_id === post.id && a.status === 'PENDING');
+  const postAcceptedApps = applications.filter(a => a.post_id === post.id && a.status === 'ACCEPTED');
+
+  const handleReview = async (appId: string, status: 'ACCEPTED' | 'REJECTED') => {
+    setReviewingAppId(appId);
+    setHostReviewFeedback(null);
+    try {
+      const res = await reviewApplication(appId, status);
+      if (res.success) {
+        setHostReviewFeedback({ appId, type: 'success', message: res.message });
+      } else {
+        setHostReviewFeedback({ appId, type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setHostReviewFeedback({ appId, type: 'error', message: err.message || 'Action failed' });
+    } finally {
+      setReviewingAppId(null);
+    }
+  };
 
   // Eligibility check
   const deptEligible = !currentUser || post.eligible_departments.includes('ANY') || 
@@ -353,8 +380,27 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
             </div>
           </div>
 
+          {/* Student Status Alerts */}
+          {isPending && !isHost && (
+            <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
+              <Clock className="w-4 h-4 shrink-0 text-amber-500" />
+              <span>
+                Your join request is currently pending review by <strong>{post.host_name}</strong>. You will be notified immediately upon approval.
+              </span>
+            </div>
+          )}
+
+          {isRejected && !isHost && (
+            <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-800 dark:text-rose-200 text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+              <span>
+                Your request to join this initiative was not accepted by the host.
+              </span>
+            </div>
+          )}
+
           {/* Submission Note Input (for Locked Join Mode) */}
-          {post.join_mode === 'LOCKED' && !isAccepted && !isPending && !isHost && (
+          {post.join_mode === 'LOCKED' && !isAccepted && !isPending && !isRejected && !isHost && (
             <div className="space-y-2 pt-2">
               <label className="block text-xs font-bold text-[var(--color-text-main)]">
                 Introduce Yourself & State Portfolio / Motivation (Optional)
@@ -380,6 +426,121 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
             </div>
           )}
 
+          {/* HOST PARTICIPATION & APPROVAL MANAGEMENT SECTION */}
+          {isHost && (
+            <div className="space-y-3 pt-3 border-t border-[var(--color-border)]">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-sm text-[var(--color-text-main)] flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[var(--color-burgundy)]" />
+                  <span>Participant Requests ({postPendingApps.length} Pending)</span>
+                </h3>
+                <span className="text-xs text-[var(--color-text-muted)] font-mono">
+                  {post.filled_slots} of {post.total_slots} Slots Filled
+                </span>
+              </div>
+
+              {postPendingApps.length === 0 ? (
+                <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] italic text-center sm:text-left">
+                  No pending requests for this event. When students request to join, you can approve or decline them here.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {postPendingApps.map((app) => (
+                    <div
+                      key={app.id}
+                      className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-2.5 shadow-xs"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="font-bold text-xs text-[var(--color-text-main)] flex items-center gap-2">
+                            <span>{app.applicant_name}</span>
+                            {app.applicant_roll && (
+                              <span className="text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-surface-card)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">
+                                {app.applicant_roll}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-[var(--color-text-muted)]">
+                            {app.applicant_dept || 'Engineering'} {app.applicant_year ? `• Batch ${app.applicant_year}` : ''} • Role: <strong className="text-[var(--color-text-main)]">{app.assigned_role || 'Participant'}</strong>
+                          </div>
+                        </div>
+
+                        <Badge variant="warning" size="sm" icon={<Clock className="w-3 h-3" />} dot>
+                          Pending Review
+                        </Badge>
+                      </div>
+
+                      {app.message && (
+                        <p className="text-xs text-[var(--color-text-muted)] italic bg-[var(--color-surface-card)] p-2 rounded-lg border border-[var(--color-border)]">
+                          "{app.message}"
+                        </p>
+                      )}
+
+                      {app.applicant_skills && app.applicant_skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {app.applicant_skills.map((s, idx) => (
+                            <span key={idx} className="px-2 py-0.5 rounded-md text-[10px] bg-[var(--color-surface-card)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {hostReviewFeedback?.appId === app.id && (
+                        <div className={`p-2 rounded-lg text-xs font-semibold ${
+                          hostReviewFeedback.type === 'success' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                        }`}>
+                          {hostReviewFeedback.message}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 pt-1 border-t border-[var(--color-border)]">
+                        <button
+                          type="button"
+                          disabled={reviewingAppId === app.id || post.filled_slots >= post.total_slots}
+                          onClick={() => handleReview(app.id, 'ACCEPTED')}
+                          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>{reviewingAppId === app.id ? 'Processing...' : 'Approve'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={reviewingAppId === app.id}
+                          onClick={() => handleReview(app.id, 'REJECTED')}
+                          className="px-3.5 py-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 disabled:opacity-50 text-rose-400 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Reject</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Confirmed Participants Roster */}
+              {postAcceptedApps.length > 0 && (
+                <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-2">
+                  <div className="font-bold text-xs text-[var(--color-text-main)] flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Confirmed Team Members ({postAcceptedApps.length} / {post.total_slots})</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {postAcceptedApps.map(a => (
+                      <span key={a.id} className="px-2.5 py-1 rounded-lg bg-[var(--color-surface-card)] border border-[var(--color-border)] text-xs text-[var(--color-text-main)] flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>{a.applicant_name}</span>
+                        <span className="text-[10px] text-[var(--color-text-muted)] font-mono">({a.assigned_role || 'Participant'})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* Footer Actions */}
@@ -395,8 +556,12 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
                 <CheckCircle className="w-4 h-4" /> You are an active participant in this event.
               </span>
             ) : isPending ? (
-              <span className="text-amber-700 dark:text-amber-400 font-semibold">
-                Your request is pending host review.
+              <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
+                <Clock className="w-4 h-4" /> Request submitted: Pending host approval.
+              </span>
+            ) : isRejected ? (
+              <span className="text-rose-700 dark:text-rose-400 font-semibold flex items-center gap-1">
+                <AlertTriangle className="w-4 h-4" /> Request declined by host.
               </span>
             ) : !isEligible ? (
               <span className="text-amber-700 dark:text-amber-400 font-medium">
@@ -419,7 +584,27 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
               </button>
             )}
 
-            {!isHost && !isAccepted && !isPending && (
+            {isPending && !isHost && (
+              <button
+                disabled
+                className="px-5 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center gap-2 cursor-not-allowed"
+              >
+                <Clock className="w-4 h-4" />
+                <span>Request Pending</span>
+              </button>
+            )}
+
+            {isRejected && !isHost && (
+              <button
+                disabled
+                className="px-5 py-2.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 font-semibold text-xs flex items-center gap-2 cursor-not-allowed"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>Request Declined</span>
+              </button>
+            )}
+
+            {!isHost && !isAccepted && !isPending && !isRejected && (
               <button
                 onClick={handleJoinOrApply}
                 disabled={isFull || isSubmitting}

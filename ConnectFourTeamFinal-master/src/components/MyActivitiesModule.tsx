@@ -10,7 +10,13 @@ import {
   Printer, 
   ShieldCheck, 
   Calendar,
-  XCircle
+  XCircle,
+  Check,
+  X,
+  Users,
+  UserCheck,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -26,12 +32,28 @@ export const MyActivitiesModule: React.FC = () => {
     setSelectedPostForChat, 
     setSelectedODSlipForView,
     withdrawApplication,
+    reviewApplication,
+    refreshApplications,
     setIsAuthModalOpen,
     setAuthModalMode
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'joined' | 'pending' | 'hosted' | 'od-slips'>('joined');
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const [processingAppId, setProcessingAppId] = useState<string | null>(null);
+  const [reviewFeedback, setReviewFeedback] = useState<{ appId: string; type: 'success' | 'error'; message: string } | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Applications for events hosted by current user
+  const applicationsForMyEvents = useMemo(() => {
+    if (!currentUser) return [];
+    const myPostIds = new Set(posts.filter(p => p.host_id === currentUser.id).map(p => p.id));
+    return applications.filter(a => myPostIds.has(a.post_id));
+  }, [applications, posts, currentUser]);
+
+  const pendingRequestsForMyEvents = useMemo(() => {
+    return applicationsForMyEvents.filter(a => a.status === 'PENDING');
+  }, [applicationsForMyEvents]);
 
   // Joined (Accepted)
   const myAcceptedApps = useMemo(() => {
@@ -67,6 +89,32 @@ export const MyActivitiesModule: React.FC = () => {
   const handleWithdraw = (appId: string) => {
     withdrawApplication(appId);
     setWithdrawingId(null);
+  };
+
+  const handleHostReview = async (appId: string, decision: 'ACCEPTED' | 'REJECTED') => {
+    setProcessingAppId(appId);
+    setReviewFeedback(null);
+    try {
+      const res = await reviewApplication(appId, decision);
+      if (res.success) {
+        setReviewFeedback({ appId, type: 'success', message: res.message });
+      } else {
+        setReviewFeedback({ appId, type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setReviewFeedback({ appId, type: 'error', message: err.message || 'Operation failed' });
+    } finally {
+      setProcessingAppId(null);
+    }
+  };
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      await refreshApplications();
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   if (!currentUser) {
@@ -141,13 +189,18 @@ export const MyActivitiesModule: React.FC = () => {
             onClick={() => setActiveSubTab('hosted')}
             role="tab"
             aria-selected={activeSubTab === 'hosted'}
-            className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
+            className={`px-4 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
               activeSubTab === 'hosted'
                 ? 'border border-[var(--color-burgundy)] text-[var(--color-burgundy)] dark:text-[#E5DED2] bg-[var(--color-burgundy)]/15 font-bold shadow-xs'
                 : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] bg-[var(--color-surface)]'
             }`}
           >
-            Hosted by Me ({hostedByMe.length})
+            <span>Hosted by Me ({hostedByMe.length})</span>
+            {pendingRequestsForMyEvents.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-500 text-black font-extrabold animate-pulse">
+                {pendingRequestsForMyEvents.length} pending
+              </span>
+            )}
           </button>
 
           <button
@@ -323,9 +376,38 @@ export const MyActivitiesModule: React.FC = () => {
         </div>
       )}
 
-      {/* SUBTAB 3: Hosted By Me */}
+      {/* SUBTAB 3: Hosted By Me (With Real-Time Host Approval Interface) */}
       {activeSubTab === 'hosted' && (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Top Banner Alert for Host Pending Actions */}
+          {pendingRequestsForMyEvents.length > 0 && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 font-bold">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[var(--color-text-main)]">
+                    {pendingRequestsForMyEvents.length} Pending Approval Request{pendingRequestsForMyEvents.length > 1 ? 's' : ''} Awaiting Your Decision
+                  </h4>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">
+                    Students are waiting to join your initiatives. Review their profiles and approve or decline below.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={isSyncing}
+                className="px-3 py-1.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-xs text-[var(--color-text-main)] font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-[var(--color-burgundy)]' : ''}`} />
+                <span>{isSyncing ? 'Syncing...' : 'Sync Cloud'}</span>
+              </button>
+            </div>
+          )}
+
           {hostedByMe.length === 0 ? (
             <EmptyState
               icon={<FolderCheck className="w-6 h-6 text-[var(--color-text-muted)]" />}
@@ -333,51 +415,214 @@ export const MyActivitiesModule: React.FC = () => {
               description="Host a hackathon team, study group, carpool ride, or student project using the Create Event button."
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {hostedByMe.map((post) => (
-                <div
-                  key={post.id}
-                  className="p-5 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] shadow-md space-y-3 flex flex-col justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="warning" size="sm">
-                        Organizer View
-                      </Badge>
-                      <span className="font-mono text-xs text-[var(--color-text-muted)] font-semibold">
-                        {post.filled_slots} of {post.total_slots} Slots Filled
-                      </span>
+            <div className="space-y-6">
+              {hostedByMe.map((post) => {
+                const postPendingApps = applications.filter(a => a.post_id === post.id && a.status === 'PENDING');
+                const postAcceptedApps = applications.filter(a => a.post_id === post.id && a.status === 'ACCEPTED');
+
+                return (
+                  <div
+                    key={post.id}
+                    className="p-5 sm:p-6 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] shadow-md space-y-5"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--color-border)]">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="warning" size="sm">
+                            Host View
+                          </Badge>
+                          <span className="text-xs font-medium text-[var(--color-text-muted)]">
+                            {post.venue_name} • {new Date(post.start_time).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-base text-[var(--color-text-main)]">
+                          {post.title}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono text-xs text-[var(--color-text-muted)] font-semibold">
+                          {post.filled_slots} of {post.total_slots} Slots Filled
+                        </span>
+                        <Badge variant={post.filled_slots >= post.total_slots ? 'error' : 'success'} size="sm">
+                          {post.filled_slots >= post.total_slots ? 'CAPACITY FULL' : 'ACCEPTING'}
+                        </Badge>
+                      </div>
                     </div>
 
-                    <h4 className="font-bold text-sm text-[var(--color-text-main)]">
-                      {post.title}
-                    </h4>
-
-                    <p className="text-xs text-[var(--color-text-muted)] line-clamp-2 leading-relaxed">
+                    {/* Description preview */}
+                    <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
                       {post.description}
                     </p>
-                  </div>
 
-                  <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedPostForDetail(post)}
-                    >
-                      Manage Listing
-                    </Button>
+                    {/* PENDING APPROVAL REQUESTS SECTION */}
+                    <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-[var(--color-burgundy)] dark:text-[#E5DED2]" />
+                          <h4 className="font-bold text-xs sm:text-sm text-[var(--color-text-main)]">
+                            Pending Approval Requests
+                          </h4>
+                          {postPendingApps.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-500 font-bold border border-amber-500/30">
+                              {postPendingApps.length} pending
+                            </span>
+                          )}
+                        </div>
 
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => setSelectedPostForChat(post)}
-                      leftIcon={<MessageSquare className="w-3.5 h-3.5" />}
-                    >
-                      Host Chat
-                    </Button>
+                        {postPendingApps.length === 0 && (
+                          <span className="text-[11px] text-[var(--color-text-muted)]">
+                            All requests reviewed
+                          </span>
+                        )}
+                      </div>
+
+                      {postPendingApps.length === 0 ? (
+                        <p className="text-xs text-[var(--color-text-muted)] italic py-2 text-center sm:text-left">
+                          No pending join requests for this event. When students request to join, their profiles with Approve and Reject options will appear here.
+                        </p>
+                      ) : (
+                        <div className="space-y-3 pt-1">
+                          {postPendingApps.map((app) => (
+                            <div
+                              key={app.id}
+                              className="p-4 rounded-xl bg-[var(--color-surface-card)] border border-[var(--color-border)] shadow-xs space-y-3"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-9 h-9 rounded-full bg-[var(--color-burgundy)]/20 text-[var(--color-burgundy)] dark:text-[#E5DED2] flex items-center justify-center font-bold text-xs border border-[var(--color-burgundy)]/30 shrink-0">
+                                    {app.applicant_name.slice(0, 2).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-xs sm:text-sm text-[var(--color-text-main)] flex items-center gap-2">
+                                      <span>{app.applicant_name}</span>
+                                      {app.applicant_roll && (
+                                        <span className="text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border)]">
+                                          {app.applicant_roll}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[11px] text-[var(--color-text-muted)]">
+                                      {app.applicant_dept || 'Engineering'} {app.applicant_year ? `• Batch ${app.applicant_year}` : ''} • Target Role: <strong className="text-[var(--color-text-main)]">{app.assigned_role || 'Participant'}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 self-start sm:self-center">
+                                  <Badge variant="warning" size="sm" icon={<Clock className="w-3 h-3" />} dot>
+                                    Awaiting Host Decision
+                                  </Badge>
+                                  <span className="text-[10px] text-[var(--color-text-muted)]">
+                                    {new Date(app.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Student's application note */}
+                              {app.message && (
+                                <p className="text-xs text-[var(--color-text-muted)] italic bg-[var(--color-surface)] p-2.5 rounded-lg border border-[var(--color-border)]">
+                                  "{app.message}"
+                                </p>
+                              )}
+
+                              {/* Skills */}
+                              {app.applicant_skills && app.applicant_skills.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {app.applicant_skills.map((skill, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-0.5 rounded-md text-[10px] bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)]"
+                                    >
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Per-application action feedback toast */}
+                              {reviewFeedback?.appId === app.id && (
+                                <div className={`p-2.5 rounded-lg text-xs font-semibold ${
+                                  reviewFeedback.type === 'success'
+                                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                                }`}>
+                                  {reviewFeedback.message}
+                                </div>
+                              )}
+
+                              {/* ACTION BUTTONS: APPROVE & REJECT */}
+                              <div className="flex items-center gap-2 pt-2 border-t border-[var(--color-border)]">
+                                <button
+                                  type="button"
+                                  disabled={processingAppId === app.id || post.filled_slots >= post.total_slots}
+                                  onClick={() => handleHostReview(app.id, 'ACCEPTED')}
+                                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>{processingAppId === app.id ? 'Confirming...' : 'Approve Request'}</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  disabled={processingAppId === app.id}
+                                  onClick={() => handleHostReview(app.id, 'REJECTED')}
+                                  className="px-4 py-2 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 disabled:opacity-50 text-rose-400 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Reject Request</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CONFIRMED PARTICIPANTS ROSTER */}
+                    {postAcceptedApps.length > 0 && (
+                      <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-2">
+                        <div className="flex items-center gap-2 font-bold text-xs text-[var(--color-text-main)]">
+                          <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Confirmed Participants ({postAcceptedApps.length} / {post.total_slots})</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {postAcceptedApps.map((a) => (
+                            <span
+                              key={a.id}
+                              className="px-2.5 py-1 rounded-lg bg-[var(--color-surface-card)] border border-[var(--color-border)] text-xs text-[var(--color-text-main)] flex items-center gap-1.5"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                              <span className="font-semibold">{a.applicant_name}</span>
+                              <span className="text-[10px] text-[var(--color-text-muted)]">({a.assigned_role || 'Participant'})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Card Footer Actions */}
+                    <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedPostForDetail(post)}
+                      >
+                        Manage Listing
+                      </Button>
+
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setSelectedPostForChat(post)}
+                        leftIcon={<MessageSquare className="w-3.5 h-3.5" />}
+                      >
+                        Host Chat
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

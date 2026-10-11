@@ -3,6 +3,7 @@ import {
   UserProfile,
   Post,
   Application,
+  ApplicationStatus,
   Message,
   NotificationItem,
   ODSlip,
@@ -439,8 +440,36 @@ export async function deleteCloudOpportunity(
 }
 
 // ----------------------------------------------------------------------------
-// APPLICATIONS REPOSITORY
+// APPLICATIONS REPOSITORY (CLOUD SYNCHRONIZED)
 // ----------------------------------------------------------------------------
+
+export function mapDbRecordToApplication(raw: any): Application {
+  let status: ApplicationStatus = 'PENDING';
+  const rawStatus = String(raw.status || '').toUpperCase();
+  if (rawStatus === 'ACCEPTED' || rawStatus === 'APPROVED') {
+    status = 'ACCEPTED';
+  } else if (rawStatus === 'REJECTED') {
+    status = 'REJECTED';
+  } else if (rawStatus === 'INVITED') {
+    status = 'INVITED';
+  }
+
+  return {
+    id: String(raw.id),
+    post_id: String(raw.post_id),
+    applicant_id: String(raw.applicant_id),
+    applicant_name: raw.applicant_name || 'Student Applicant',
+    applicant_roll: raw.applicant_roll || '',
+    applicant_dept: raw.applicant_dept || 'Engineering',
+    applicant_year: raw.applicant_year ? Number(raw.applicant_year) : undefined,
+    applicant_skills: Array.isArray(raw.applicant_skills) ? raw.applicant_skills : [],
+    assigned_role: raw.assigned_role || 'Participant',
+    status,
+    attended: Boolean(raw.attended),
+    message: raw.message || '',
+    created_at: raw.created_at || new Date().toISOString(),
+  };
+}
 
 export function getFallbackApplications(): Application[] {
   try {
@@ -453,6 +482,167 @@ export function getFallbackApplications(): Application[] {
 
 export function saveFallbackApplications(apps: Application[]) {
   localStorage.setItem(FALLBACK_KEYS.APPLICATIONS, JSON.stringify(apps));
+}
+
+/**
+ * Fetches all applications from Supabase cloud database.
+ */
+export async function fetchCloudApplications(): Promise<Application[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const apps = data.map(mapDbRecordToApplication);
+      saveFallbackApplications(apps);
+      return apps;
+    }
+    if (error) {
+      console.warn('fetchCloudApplications error:', error.message);
+    }
+  }
+  return getFallbackApplications();
+}
+
+/**
+ * Creates and persists a new application / join request in Supabase.
+ */
+export async function createCloudApplication(
+  app: Partial<Application>
+): Promise<{ success: boolean; application?: Application; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    // Local fallback
+    const localApp: Application = {
+      id: app.id || `app-${Date.now()}`,
+      post_id: app.post_id!,
+      applicant_id: app.applicant_id!,
+      applicant_name: app.applicant_name || 'Student',
+      applicant_roll: app.applicant_roll,
+      applicant_dept: app.applicant_dept,
+      applicant_year: app.applicant_year,
+      applicant_skills: app.applicant_skills || [],
+      assigned_role: app.assigned_role || 'Participant',
+      status: (app.status as ApplicationStatus) || 'PENDING',
+      attended: Boolean(app.attended),
+      message: app.message || '',
+      created_at: app.created_at || new Date().toISOString(),
+    };
+    const list = getFallbackApplications();
+    list.unshift(localApp);
+    saveFallbackApplications(list);
+    return { success: true, application: localApp };
+  }
+
+  // 1. Prevent duplicate submission in Supabase
+  const existing = await supabase
+    .from('applications')
+    .select('id, status')
+    .eq('post_id', app.post_id)
+    .eq('applicant_id', app.applicant_id)
+    .maybeSingle();
+
+  if (existing.data) {
+    const currentStatus = String(existing.data.status).toUpperCase();
+    if (currentStatus === 'ACCEPTED' || currentStatus === 'APPROVED') {
+      return { success: false, error: 'You are already an approved participant for this event.' };
+    }
+    if (currentStatus === 'PENDING') {
+      return { success: false, error: 'You already have a pending request for this event.' };
+    }
+    if (currentStatus === 'REJECTED') {
+      return { success: false, error: 'Your previous request for this event was declined.' };
+    }
+  }
+
+  // 2. Insert into Supabase
+  const payload = {
+    post_id: app.post_id,
+    applicant_id: app.applicant_id,
+    applicant_name: app.applicant_name,
+    applicant_roll: app.applicant_roll || null,
+    applicant_dept: app.applicant_dept || null,
+    applicant_year: app.applicant_year || null,
+    applicant_skills: app.applicant_skills || [],
+    assigned_role: app.assigned_role || 'Participant',
+    status: (app.status || 'PENDING').toUpperCase(),
+    attended: false,
+    message: app.message || null,
+  };
+
+  const { data, error } = await supabase
+    .from('applications')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      return { success: false, error: 'You have already submitted a request for this event.' };
+    }
+    return { success: false, error: error.message };
+  }
+
+  const newApp = mapDbRecordToApplication(data);
+  return { success: true, application: newApp };
+}
+
+/**
+ * Updates application status in Supabase (Host Approve / Reject).
+ */
+export async function updateCloudApplicationStatus(
+  appId: string,
+  status: ApplicationStatus
+): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    // Local fallback
+    const list = getFallbackApplications();
+    const idx = list.findIndex(a => a.id === appId);
+    if (idx >= 0) {
+      list[idx].status = status;
+      saveFallbackApplications(list);
+    }
+    return { success: true };
+  }
+
+  const { error } = await supabase
+    .from('applications')
+    .update({
+      status: status.toUpperCase(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', appId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Deletes an application from Supabase (Withdraw request).
+ */
+export async function deleteCloudApplication(
+  appId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    const list = getFallbackApplications();
+    saveFallbackApplications(list.filter(a => a.id !== appId));
+    return { success: true };
+  }
+
+  const { error } = await supabase
+    .from('applications')
+    .delete()
+    .eq('id', appId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
 }
 
 // ----------------------------------------------------------------------------

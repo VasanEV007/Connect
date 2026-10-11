@@ -39,7 +39,12 @@ import {
   saveFallbackODSlips,
   isSupabaseConfigured,
   createCloudOpportunity,
+  updateCloudOpportunity,
   fetchOpportunities,
+  fetchCloudApplications,
+  createCloudApplication,
+  updateCloudApplicationStatus,
+  deleteCloudApplication,
   supabase
 } from '../lib/supabase';
 
@@ -108,10 +113,11 @@ interface AppContextType {
   // Real Opportunity actions
   createPost: (postData: Partial<Post>) => Promise<{ success: boolean; post?: Post; error?: string }>;
   refreshEvents: () => Promise<void>;
+  refreshApplications: () => Promise<void>;
   isCloudConnected: boolean;
   joinPost: (postId: string, role?: string, message?: string) => Promise<{ success: boolean; message: string }>;
-  withdrawApplication: (appId: string) => boolean;
-  reviewApplication: (appId: string, status: 'ACCEPTED' | 'REJECTED', feedback?: string) => void;
+  withdrawApplication: (appId: string) => Promise<boolean> | boolean;
+  reviewApplication: (appId: string, status: 'ACCEPTED' | 'REJECTED', feedback?: string) => Promise<{ success: boolean; message: string }>;
   markAttendance: (appId: string, attended: boolean) => void;
   generateODSlip: (appId: string) => ODSlip | null;
   sendMessage: (postId: string, content: string) => boolean;
@@ -219,25 +225,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(isSupabaseConfigured());
 
-  // Load shared cloud opportunities on mount
+  // Load shared cloud opportunities and applications on mount
   useEffect(() => {
     let isMounted = true;
-    const loadSharedEvents = async () => {
+    const loadSharedData = async () => {
       if (isSupabaseConfigured()) {
         try {
-          const cloudPosts = await fetchOpportunities();
-          if (isMounted && cloudPosts && cloudPosts.length > 0) {
-            setPosts(cloudPosts);
+          const [cloudPosts, cloudApps] = await Promise.all([
+            fetchOpportunities(),
+            fetchCloudApplications()
+          ]);
+          if (isMounted) {
+            if (cloudPosts && cloudPosts.length > 0) {
+              setPosts(cloudPosts);
+            }
+            if (cloudApps) {
+              setApplications(cloudApps);
+            }
             setIsCloudConnected(true);
           }
         } catch (err) {
-          console.error('Error loading cloud opportunities on mount:', err);
+          console.error('Error loading cloud data on mount:', err);
           if (isMounted) setIsCloudConnected(false);
         }
       }
     };
-    loadSharedEvents();
+    loadSharedData();
     return () => { isMounted = false; };
+  }, []);
+
+  // Realtime subscription for applications table changes
+  useEffect(() => {
+    if (isSupabaseConfigured() && supabase) {
+      const channel = supabase
+        .channel('connect-applications-sync')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'applications' },
+          async () => {
+            try {
+              const freshApps = await fetchCloudApplications();
+              if (freshApps) {
+                setApplications(freshApps);
+              }
+            } catch (err) {
+              console.warn('Realtime application sync failed:', err);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        if (supabase) {
+          supabase.removeChannel(channel);
+        }
+      };
+    }
   }, []);
 
   // Listen to Supabase Auth state changes
@@ -252,14 +295,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
+  const refreshApplications = async () => {
+    if (isSupabaseConfigured()) {
+      try {
+        const cloudApps = await fetchCloudApplications();
+        if (cloudApps) {
+          setApplications(cloudApps);
+        }
+      } catch (err) {
+        console.error('Error refreshing cloud applications:', err);
+      }
+    }
+  };
+
   const refreshEvents = async () => {
     if (isSupabaseConfigured()) {
       try {
-        const cloudPosts = await fetchOpportunities();
+        const [cloudPosts, cloudApps] = await Promise.all([
+          fetchOpportunities(),
+          fetchCloudApplications()
+        ]);
         if (cloudPosts) {
           setPosts(cloudPosts);
-          setIsCloudConnected(true);
         }
+        if (cloudApps) {
+          setApplications(cloudApps);
+        }
+        setIsCloudConnected(true);
       } catch (err) {
         console.error('Error refreshing cloud events:', err);
         setIsCloudConnected(false);
@@ -555,7 +617,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true, post: localPost };
   };
 
-  // Join or apply to opportunity
+  // Join or apply to opportunity (Synchronized with Supabase Cloud)
   const joinPost = async (postId: string, role?: string, message?: string): Promise<{ success: boolean; message: string }> => {
     if (!currentUser) {
       setIsAuthModalOpen(true);
@@ -578,6 +640,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (existingApp.status === 'PENDING') {
         return { success: false, message: 'Your application is currently pending host review.' };
       }
+      if (existingApp.status === 'REJECTED') {
+        return { success: false, message: 'Your previous request for this opportunity was declined.' };
+      }
     }
 
     // Check capacity
@@ -588,9 +653,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const isUnlocked = post.join_mode === 'UNLOCKED';
 
     if (isUnlocked) {
-      // Instant Join
-      const newApp: Application = {
-        id: `app-${Date.now()}`,
+      // Instant Join: Creates participation record with ACCEPTED status
+      const appPayload: Partial<Application> = {
         post_id: postId,
         applicant_id: currentUser.id,
         applicant_name: currentUser.full_name,
@@ -602,11 +666,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: 'ACCEPTED',
         attended: false,
         message: message || 'Joined via instant registration.',
-        created_at: new Date().toISOString(),
       };
 
+      const cloudRes = await createCloudApplication(appPayload);
+      if (!cloudRes.success || !cloudRes.application) {
+        return { success: false, message: cloudRes.error || 'Failed to register for this opportunity.' };
+      }
+
+      const newApp = cloudRes.application;
       const newFilled = post.filled_slots + 1;
       const newStatus = newFilled >= post.total_slots ? 'FULL' : 'OPEN';
+
+      // Update post capacity in Supabase
+      await updateCloudOpportunity(post.id, { filled_slots: newFilled, status: newStatus });
 
       setPosts(prev => prev.map(p => {
         if (p.id !== postId) return p;
@@ -619,7 +691,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return { ...p, filled_slots: newFilled, status: newStatus, target_roles: updatedTargetRoles };
       }));
 
-      setApplications(prev => [newApp, ...prev]);
+      setApplications(prev => [newApp, ...prev.filter(a => a.id !== newApp.id)]);
 
       // Add join announcement to chat
       const chatNotice: Message = {
@@ -656,9 +728,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return { success: true, message: 'Registration confirmed! You have access to the group coordination chat.' };
     } else {
-      // Locked: Request to Join
-      const newApp: Application = {
-        id: `app-${Date.now()}`,
+      // Locked: Creates participation request with PENDING status in Supabase
+      const appPayload: Partial<Application> = {
         post_id: postId,
         applicant_id: currentUser.id,
         applicant_name: currentUser.full_name,
@@ -670,10 +741,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: 'PENDING',
         attended: false,
         message: message || '',
-        created_at: new Date().toISOString(),
       };
 
-      setApplications(prev => [newApp, ...prev]);
+      const cloudRes = await createCloudApplication(appPayload);
+      if (!cloudRes.success || !cloudRes.application) {
+        return { success: false, message: cloudRes.error || 'Failed to submit application request.' };
+      }
+
+      const newApp = cloudRes.application;
+      setApplications(prev => [newApp, ...prev.filter(a => a.id !== newApp.id)]);
 
       // Notify host
       const hostNotif: NotificationItem = {
@@ -690,33 +766,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setNotifications(prev => [hostNotif, ...prev]);
 
-      return { success: true, message: 'Application submitted! The organizer has been notified to review your profile.' };
+      return { success: true, message: 'Application submitted! Your request is pending host review.' };
     }
   };
 
   // Withdraw pending application
-  const withdrawApplication = (appId: string): boolean => {
+  const withdrawApplication = async (appId: string): Promise<boolean> => {
     if (!currentUser) return false;
     const app = applications.find(a => a.id === appId);
     if (!app || app.applicant_id !== currentUser.id) return false;
 
+    await deleteCloudApplication(appId);
     setApplications(prev => prev.filter(a => a.id !== appId));
     return true;
   };
 
-  // Review Application (Approve / Reject)
-  const reviewApplication = (appId: string, status: 'ACCEPTED' | 'REJECTED', feedback?: string) => {
-    if (!currentUser) return;
+  // Review Application (Host Approve / Reject with Cloud Synchronization)
+  const reviewApplication = async (
+    appId: string, 
+    status: 'ACCEPTED' | 'REJECTED', 
+    feedback?: string
+  ): Promise<{ success: boolean; message: string }> => {
+    if (!currentUser) {
+      return { success: false, message: 'Please sign in to manage requests.' };
+    }
     const app = applications.find(a => a.id === appId);
-    if (!app) return;
+    if (!app) {
+      return { success: false, message: 'Application request not found.' };
+    }
     const post = posts.find(p => p.id === app.post_id);
-    if (!post) return;
+    if (!post) {
+      return { success: false, message: 'Associated event not found.' };
+    }
 
-    if (!canReviewApplication(currentUser, post)) return;
+    // Security: Only the authorized event host can review applications
+    if (!canReviewApplication(currentUser, post)) {
+      return { success: false, message: 'Unauthorized: Only the host can review requests for this event.' };
+    }
+
+    // Prevent repeated decisions on an already processed request
+    if (app.status !== 'PENDING') {
+      return { 
+        success: false, 
+        message: `This request has already been ${app.status === 'ACCEPTED' ? 'approved' : 'rejected'}.` 
+      };
+    }
+
+    // Persist status change to Supabase cloud
+    const cloudRes = await updateCloudApplicationStatus(appId, status);
+    if (!cloudRes.success) {
+      return { success: false, message: cloudRes.error || 'Failed to update request status in database.' };
+    }
 
     if (status === 'ACCEPTED') {
       const newFilled = post.filled_slots + 1;
       const newPostStatus = newFilled >= post.total_slots ? 'FULL' : 'OPEN';
+
+      // Update post filled slots in cloud database
+      await updateCloudOpportunity(post.id, { filled_slots: newFilled, status: newPostStatus });
 
       setPosts(prev => prev.map(p => {
         if (p.id !== post.id) return p;
@@ -772,6 +879,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     setApplications(prev => prev.map(a => a.id === appId ? { ...a, status } : a));
+    return {
+      success: true,
+      message: status === 'ACCEPTED' ? 'Request approved successfully!' : 'Request rejected.'
+    };
   };
 
   // Mark Attendance
@@ -944,6 +1055,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSupabaseActive: isSupabaseConfigured(),
         isCloudConnected,
         refreshEvents,
+        refreshApplications,
         selectedCategoryFilter,
         setSelectedCategoryFilter,
         registerNewAccount,
