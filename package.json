@@ -1,6 +1,9 @@
 {
   "name": "connectfourteamfinal-root",
   "private": true,
+  "workspaces": [
+    "ConnectFourTeamFinal-master"
+  ],
   "scripts": {
     "dev": "npm run dev --prefix ConnectFourTeamFinal-master",
     "build": "npm run build --prefix ConnectFourTeamFinal-master",
