@@ -155,13 +155,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUserState] = useState<UserProfile | null>(() => {
     try {
       const saved = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
-      if (!saved) return null;
-      const parsed = JSON.parse(saved);
-      if (parsed && (parsed.id?.startsWith('usr-faculty-') || parsed.id?.startsWith('usr-student-'))) {
-        localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
-        return null;
-      }
-      return parsed;
+      return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
@@ -266,7 +260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (cloudMsgs && cloudMsgs.length > 0) {
               setMessages(cloudMsgs);
             }
-            if (cloudProfiles) {
+            if (cloudProfiles && cloudProfiles.length > 0) {
               setAllUsers(cloudProfiles);
             }
             setIsCloudConnected(true);
@@ -281,7 +275,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => { isMounted = false; };
   }, []);
 
-  // Comprehensive Realtime subscription for applications, opportunities, group chat messages, and profiles
+  // Comprehensive Realtime subscription for applications, opportunities, and group chat messages
   useEffect(() => {
     if (isSupabaseConfigured() && supabase) {
       const channel = supabase
@@ -378,19 +372,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
         )
-        // 5. Profiles changes (new user registration, profile updates in real time)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'profiles' },
-          async () => {
-            try {
-              const freshProfiles = await fetchAllProfiles();
-              setAllUsers(freshProfiles);
-            } catch (err) {
-              console.warn('Realtime profiles sync failed:', err);
-            }
-          }
-        )
         .subscribe();
 
       return () => {
@@ -405,9 +386,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (isSupabaseConfigured() && supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (!session?.user && currentUser && (currentUser.id.startsWith('usr-') || currentUser.id.startsWith('user-'))) {
-          // If session ended, clear guest/mock profile
-          setCurrentUserState(null);
+        if (!session?.user && currentUser && currentUser.id.startsWith('usr-')) {
+          // Keep local profile if in offline mode
         }
       });
       return () => subscription.unsubscribe();
