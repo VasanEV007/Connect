@@ -23,7 +23,9 @@ import {
   MessageSquare,
   Send,
   Check,
-  UserCheck
+  UserCheck,
+  Trash2,
+  XCircle
 } from 'lucide-react';
 
 interface Props {
@@ -35,6 +37,8 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
   const { 
     currentUser, 
     joinPost, 
+    deletePost,
+    cancelEventParticipation,
     reviewApplication,
     applications, 
     checkScheduleClash, 
@@ -48,6 +52,10 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
   const [submitFeedback, setSubmitFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [reviewingAppId, setReviewingAppId] = useState<string | null>(null);
   const [hostReviewFeedback, setHostReviewFeedback] = useState<{ appId: string; type: 'success' | 'error'; message: string } | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -571,7 +579,100 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            {/* Host Actions: Delete Event */}
+            {isHost && (
+              <>
+                {isConfirmingDelete ? (
+                  <div className="flex items-center gap-1.5 p-1 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+                    <span className="text-[11px] text-rose-500 font-semibold px-2">Delete this event permanently?</span>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={async () => {
+                        setIsDeleting(true);
+                        const res = await deletePost(post.id);
+                        if (res.success) {
+                          onClose();
+                        } else {
+                          setSubmitFeedback({ type: 'error', message: res.message });
+                          setIsDeleting(false);
+                          setIsConfirmingDelete(false);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(true)}
+                    className="px-3.5 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Event</span>
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Confirmed / Accepted Participant: Team Chat & Cancel Participation */}
+            {isAccepted && !isHost && (
+              <>
+                {isConfirmingCancel ? (
+                  <div className="flex items-center gap-1.5 p-1 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+                    <span className="text-[11px] text-rose-500 font-semibold px-2">Leave event and cancel your registration?</span>
+                    <button
+                      type="button"
+                      disabled={isCancelling}
+                      onClick={async () => {
+                        setIsCancelling(true);
+                        const res = await cancelEventParticipation(post.id);
+                        if (res.success) {
+                          setSubmitFeedback({ type: 'success', message: res.message });
+                          setIsConfirmingCancel(false);
+                        } else {
+                          setSubmitFeedback({ type: 'error', message: res.message });
+                        }
+                        setIsCancelling(false);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors"
+                    >
+                      {isCancelling ? 'Cancelling...' : 'Yes, Cancel'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isCancelling}
+                      onClick={() => setIsConfirmingCancel(false)}
+                      className="px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                    >
+                      Keep
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingCancel(true)}
+                    className="px-3.5 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Cancel Participation</span>
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Team Chat button */}
             {(isHost || isAccepted) && (
               <button
                 onClick={() => {
@@ -581,18 +682,60 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
                 className="px-4 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] text-[var(--color-text-main)] font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4 text-[var(--color-burgundy)]" />
-                Open Scoped Group Chat
+                <span>Open Team Chat</span>
               </button>
             )}
 
+            {/* Pending Request: Status pill & Cancel/Withdraw option */}
             {isPending && !isHost && (
-              <button
-                disabled
-                className="px-5 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center gap-2 cursor-not-allowed"
-              >
-                <Clock className="w-4 h-4" />
-                <span>Request Pending</span>
-              </button>
+              <>
+                {isConfirmingCancel ? (
+                  <div className="flex items-center gap-1.5 p-1 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+                    <span className="text-[11px] text-rose-500 font-semibold px-2">Withdraw your join request?</span>
+                    <button
+                      type="button"
+                      disabled={isCancelling}
+                      onClick={async () => {
+                        setIsCancelling(true);
+                        const res = await cancelEventParticipation(post.id);
+                        if (res.success) {
+                          setSubmitFeedback({ type: 'success', message: res.message });
+                          setIsConfirmingCancel(false);
+                        } else {
+                          setSubmitFeedback({ type: 'error', message: res.message });
+                        }
+                        setIsCancelling(false);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs cursor-pointer shadow-xs transition-colors"
+                    >
+                      {isCancelling ? 'Withdrawing...' : 'Yes, Withdraw'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isCancelling}
+                      onClick={() => setIsConfirmingCancel(false)}
+                      className="px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                    >
+                      Keep
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Request Pending</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingCancel(true)}
+                      className="px-3 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>Withdraw Request</span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
             {isRejected && !isHost && (

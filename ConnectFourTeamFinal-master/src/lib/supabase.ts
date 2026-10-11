@@ -645,25 +645,45 @@ export async function updateCloudOpportunity(
 export async function deleteCloudOpportunity(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // Always synchronize local fallback cache
+  const list = getFallbackOpportunities();
+  saveFallbackOpportunities(list.filter(o => o.id !== id));
+
+  const apps = getFallbackApplications();
+  saveFallbackApplications(apps.filter(a => a.post_id !== id));
+
   if (!isSupabaseConfigured() || !supabase) {
-    return { success: false, error: 'Supabase client is not configured.' };
+    return { success: true };
   }
 
-  const oppRes = await supabase
-    .from('opportunities')
-    .delete()
-    .eq('id', id);
+  try {
+    // 1. Delete associated registrations & applications
+    await supabase.from('applications').delete().eq('post_id', id);
+    await supabase.from('event_participants').delete().eq('event_id', id);
 
-  if (!oppRes.error) return { success: true };
+    // 2. Delete associated group chat messages
+    await supabase.from('messages').delete().eq('post_id', id);
 
-  const eventRes = await supabase
-    .from('events')
-    .delete()
-    .eq('id', id);
+    // 3. Delete from opportunities table
+    const oppRes = await supabase
+      .from('opportunities')
+      .delete()
+      .eq('id', id);
 
-  if (!eventRes.error) return { success: true };
+    // 4. Delete from events table
+    const eventRes = await supabase
+      .from('events')
+      .delete()
+      .eq('id', id);
 
-  return { success: false, error: oppRes.error?.message || eventRes.error?.message };
+    if (!oppRes.error || !eventRes.error) {
+      return { success: true };
+    }
+
+    return { success: false, error: oppRes.error?.message || eventRes.error?.message };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -849,27 +869,75 @@ export async function updateCloudApplicationStatus(
 }
 
 /**
- * Deletes an application from Supabase (Withdraw request).
+ * Deletes an application from Supabase (Withdraw request or cancel participation).
  */
 export async function deleteCloudApplication(
   appId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const list = getFallbackApplications();
+  const target = list.find(a => a.id === appId);
+  saveFallbackApplications(list.filter(a => a.id !== appId));
+
   if (!isSupabaseConfigured() || !supabase) {
-    const list = getFallbackApplications();
-    saveFallbackApplications(list.filter(a => a.id !== appId));
     return { success: true };
   }
 
-  const { error } = await supabase
-    .from('applications')
-    .delete()
-    .eq('id', appId);
+  try {
+    // If corresponding event_participants exists, clean it up
+    if (target?.post_id && target?.applicant_id) {
+      await supabase
+        .from('event_participants')
+        .delete()
+        .eq('event_id', target.post_id)
+        .eq('student_id', target.applicant_id);
+    }
 
-  if (error) {
-    return { success: false, error: error.message };
+    const { error } = await supabase
+      .from('applications')
+      .delete()
+      .eq('id', appId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Cancels event participation for a participant by event and user ID.
+ */
+export async function cancelCloudParticipation(
+  postId: string,
+  applicantId: string
+): Promise<{ success: boolean; error?: string }> {
+  const list = getFallbackApplications();
+  saveFallbackApplications(list.filter(a => !(a.post_id === postId && a.applicant_id === applicantId)));
+
+  if (!isSupabaseConfigured() || !supabase) {
+    return { success: true };
   }
 
-  return { success: true };
+  try {
+    await supabase
+      .from('applications')
+      .delete()
+      .eq('post_id', postId)
+      .eq('applicant_id', applicantId);
+
+    await supabase
+      .from('event_participants')
+      .delete()
+      .eq('event_id', postId)
+      .eq('student_id', applicantId);
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }
 
 // ----------------------------------------------------------------------------

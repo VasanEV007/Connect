@@ -16,7 +16,8 @@ import {
   Users,
   UserCheck,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -33,6 +34,8 @@ export const MyActivitiesModule: React.FC = () => {
     setSelectedPostForChat, 
     setSelectedODSlipForView,
     withdrawApplication,
+    cancelEventParticipation,
+    deletePost,
     reviewApplication,
     refreshApplications,
     setIsAuthModalOpen,
@@ -41,6 +44,9 @@ export const MyActivitiesModule: React.FC = () => {
 
   const [activeSubTab, setActiveSubTab] = useState<'joined' | 'pending' | 'hosted' | 'od-slips'>('joined');
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const [cancellingPostId, setCancellingPostId] = useState<string | null>(null);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [actionInProgress, setActionInProgress] = useState(false);
   const [processingAppId, setProcessingAppId] = useState<string | null>(null);
   const [reviewFeedback, setReviewFeedback] = useState<{ appId: string; type: 'success' | 'error'; message: string } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -266,14 +272,55 @@ export const MyActivitiesModule: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedPostForDetail(post)}
-                    >
-                      View Details
-                    </Button>
+                  <div className="pt-3 border-t border-[var(--color-border)] flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedPostForDetail(post)}
+                      >
+                        View Details
+                      </Button>
+
+                      {cancellingPostId === post.id ? (
+                        <div className="flex items-center gap-1.5 p-1 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+                          <span className="text-[11px] text-rose-500 font-semibold px-1">Cancel participation?</span>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            disabled={actionInProgress}
+                            onClick={async () => {
+                              setActionInProgress(true);
+                              try {
+                                await cancelEventParticipation(post.id);
+                              } finally {
+                                setActionInProgress(false);
+                                setCancellingPostId(null);
+                              }
+                            }}
+                          >
+                            {actionInProgress ? 'Cancelling...' : 'Yes, Cancel'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={actionInProgress}
+                            onClick={() => setCancellingPostId(null)}
+                          >
+                            Keep
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => setCancellingPostId(post.id)}
+                          leftIcon={<XCircle className="w-3.5 h-3.5" />}
+                        >
+                          Cancel Participation
+                        </Button>
+                      )}
+                    </div>
 
                     <Button
                       variant="primary"
@@ -603,14 +650,55 @@ export const MyActivitiesModule: React.FC = () => {
                     )}
 
                     {/* Card Footer Actions */}
-                    <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedPostForDetail(post)}
-                      >
-                        Manage Listing
-                      </Button>
+                    <div className="pt-3 border-t border-[var(--color-border)] flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedPostForDetail(post)}
+                        >
+                          Manage Listing
+                        </Button>
+
+                        {deletingPostId === post.id ? (
+                          <div className="flex items-center gap-1.5 p-1 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+                            <span className="text-[11px] text-rose-500 font-semibold px-1">Delete event permanently?</span>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              disabled={actionInProgress}
+                              onClick={async () => {
+                                setActionInProgress(true);
+                                try {
+                                  await deletePost(post.id);
+                                } finally {
+                                  setActionInProgress(false);
+                                  setDeletingPostId(null);
+                                }
+                              }}
+                            >
+                              {actionInProgress ? 'Deleting...' : 'Yes, Delete'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={actionInProgress}
+                              onClick={() => setDeletingPostId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => setDeletingPostId(post.id)}
+                            leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                          >
+                            Delete Event
+                          </Button>
+                        )}
+                      </div>
 
                       <Button
                         variant="primary"

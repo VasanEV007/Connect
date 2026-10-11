@@ -91,8 +91,8 @@ export function validatePostForm(input: PostFormInput): Record<string, string> {
     errors.title = 'Title must be 120 characters or fewer.';
   }
 
-  if (!input.description || input.description.trim().length < 20) {
-    errors.description = 'Please provide a clear description of at least 20 characters.';
+  if (!input.description || !input.description.trim()) {
+    errors.description = 'Please provide an event description.';
   }
 
   if (!input.startDate) {

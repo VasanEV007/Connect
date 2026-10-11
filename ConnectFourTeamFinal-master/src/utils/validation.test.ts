@@ -34,9 +34,12 @@ describe('validation utility', () => {
     expect(longTitle.title).toBeDefined();
   });
 
-  it('flags error when description is insufficient (<20 chars)', () => {
+  it('flags error when description is missing or empty, but accepts short descriptions without 20 char limit', () => {
+    const emptyDesc = validatePostForm({ ...validForm, description: '   ' });
+    expect(emptyDesc.description).toBeDefined();
+
     const shortDesc = validatePostForm({ ...validForm, description: 'Short desc' });
-    expect(shortDesc.description).toBeDefined();
+    expect(shortDesc.description).toBeUndefined();
   });
 
   it('flags error when end time is earlier than or equal to start time', () => {

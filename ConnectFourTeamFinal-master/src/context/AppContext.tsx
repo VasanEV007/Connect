@@ -40,11 +40,13 @@ import {
   isSupabaseConfigured,
   createCloudOpportunity,
   updateCloudOpportunity,
+  deleteCloudOpportunity,
   fetchOpportunities,
   fetchCloudApplications,
   createCloudApplication,
   updateCloudApplicationStatus,
   deleteCloudApplication,
+  cancelCloudParticipation,
   fetchCloudMessages,
   sendCloudMessage,
   mapDbRecordToMessage,
@@ -119,6 +121,8 @@ interface AppContextType {
   
   // Real Opportunity actions
   createPost: (postData: Partial<Post>) => Promise<{ success: boolean; post?: Post; error?: string }>;
+  deletePost: (postId: string) => Promise<{ success: boolean; message: string }>;
+  cancelEventParticipation: (postId: string) => Promise<{ success: boolean; message: string }>;
   refreshEvents: () => Promise<void>;
   refreshApplications: () => Promise<void>;
   isCloudConnected: boolean;
@@ -867,15 +871,97 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Withdraw pending application
+  // Withdraw pending application or cancel accepted registration by appId
   const withdrawApplication = async (appId: string): Promise<boolean> => {
     if (!currentUser) return false;
     const app = applications.find(a => a.id === appId);
     if (!app || app.applicant_id !== currentUser.id) return false;
 
+    const post = posts.find(p => p.id === app.post_id);
+    const wasAccepted = app.status === 'ACCEPTED';
+
     await deleteCloudApplication(appId);
     setApplications(prev => prev.filter(a => a.id !== appId));
+
+    if (wasAccepted && post) {
+      const newFilled = Math.max(0, post.filled_slots - 1);
+      const newPostStatus = newFilled < post.total_slots ? 'OPEN' : post.status;
+      await updateCloudOpportunity(post.id, { filled_slots: newFilled, status: newPostStatus });
+      setPosts(prev => prev.map(p => p.id === post.id ? { ...p, filled_slots: newFilled, status: newPostStatus } : p));
+    }
+
     return true;
+  };
+
+  // Cancel Event Participation (Participant action by event ID)
+  const cancelEventParticipation = async (postId: string): Promise<{ success: boolean; message: string }> => {
+    if (!currentUser) {
+      return { success: false, message: 'Please sign in to manage your registrations.' };
+    }
+
+    const app = applications.find(a => a.post_id === postId && a.applicant_id === currentUser.id);
+    if (!app) {
+      return { success: false, message: 'No active participation or request found for this event.' };
+    }
+
+    const post = posts.find(p => p.id === postId);
+    const wasAccepted = app.status === 'ACCEPTED';
+
+    const cloudRes = await cancelCloudParticipation(postId, currentUser.id);
+    if (!cloudRes.success) {
+      console.warn('cancelEventParticipation cloud warning:', cloudRes.error);
+    }
+
+    setApplications(prev => prev.filter(a => a.id !== app.id));
+
+    if (wasAccepted && post) {
+      const newFilled = Math.max(0, post.filled_slots - 1);
+      const newPostStatus = newFilled < post.total_slots ? 'OPEN' : post.status;
+      await updateCloudOpportunity(post.id, { filled_slots: newFilled, status: newPostStatus });
+      setPosts(prev => prev.map(p => p.id === post.id ? { ...p, filled_slots: newFilled, status: newPostStatus } : p));
+    }
+
+    return {
+      success: true,
+      message: wasAccepted
+        ? 'Participation cancelled successfully. Your slot has been released.'
+        : 'Your request to join has been withdrawn.',
+    };
+  };
+
+  // Delete Event (Host Action)
+  const deletePost = async (postId: string): Promise<{ success: boolean; message: string }> => {
+    if (!currentUser) {
+      return { success: false, message: 'Please sign in to delete events.' };
+    }
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) {
+      return { success: false, message: 'Event not found.' };
+    }
+
+    if (post.host_id !== currentUser.id && currentUser.role !== 'ADMIN') {
+      return { success: false, message: 'Unauthorized: Only the host can delete this event.' };
+    }
+
+    const cloudRes = await deleteCloudOpportunity(postId);
+    if (!cloudRes.success) {
+      console.warn('deletePost cloud delete error:', cloudRes.error);
+    }
+
+    // Clean up local states
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    setApplications(prev => prev.filter(a => a.post_id !== postId));
+    setMessages(prev => prev.filter(m => m.post_id !== postId));
+
+    if (selectedPostForDetail?.id === postId) {
+      setSelectedPostForDetail(null);
+    }
+    if (selectedPostForChat?.id === postId) {
+      setSelectedPostForChat(null);
+    }
+
+    return { success: true, message: `"${post.title}" has been deleted.` };
   };
 
   // Review Application (Host Approve / Reject with Cloud Synchronization)
@@ -1197,6 +1283,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         signOutUser,
         updateCurrentUserProfile,
         createPost,
+        deletePost,
+        cancelEventParticipation,
         joinPost,
         withdrawApplication,
         reviewApplication,
