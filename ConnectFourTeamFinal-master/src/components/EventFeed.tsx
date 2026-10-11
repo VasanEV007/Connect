@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Car,
-  Plus
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { PostCategory } from '../types';
 
@@ -29,8 +30,12 @@ export const EventFeed: React.FC = () => {
     setAuthModalMode,
     checkScheduleClash,
     selectedCategoryFilter,
-    setSelectedCategoryFilter
+    setSelectedCategoryFilter,
+    refreshEvents,
+    isCloudConnected
   } = useApp();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,20 +173,40 @@ export const EventFeed: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            if (!currentUser) {
-              setAuthModalMode('LOGIN');
-              setIsAuthModalOpen(true);
-            } else {
-              setIsCreatePostModalOpen(true);
-            }
-          }}
-          className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-text)] font-bold text-xs border border-[#798DA6]/40 shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Create Event</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <button
+            onClick={async () => {
+              setIsRefreshing(true);
+              try {
+                await refreshEvents();
+              } finally {
+                setTimeout(() => setIsRefreshing(false), 500);
+              }
+            }}
+            disabled={isRefreshing}
+            title={isCloudConnected ? 'Cloud connected to Supabase — Click to refresh' : 'Offline demo mode — Click to retry connection'}
+            className="px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-main)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[var(--color-text-subtle)] ${isRefreshing ? 'animate-spin text-[var(--color-primary)]' : ''}`} />
+            <span className="hidden xs:inline">Sync</span>
+            <span className={`w-2 h-2 rounded-full ${isCloudConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} title={isCloudConnected ? 'Supabase Live' : 'Local Storage Mode'} />
+          </button>
+
+          <button
+            onClick={() => {
+              if (!currentUser) {
+                setAuthModalMode('LOGIN');
+                setIsAuthModalOpen(true);
+              } else {
+                setIsCreatePostModalOpen(true);
+              }
+            }}
+            className="px-4 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-[var(--color-primary-text)] font-bold text-xs border border-[#798DA6]/40 shadow-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Create Event</span>
+          </button>
+        </div>
       </div>
 
       {/* Search and Category Filter Rail */}

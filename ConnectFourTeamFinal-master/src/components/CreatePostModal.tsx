@@ -124,7 +124,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
     setSkills(prev => prev.filter(s => s !== skillToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const isTravel = category === 'CARPOOL';
@@ -160,7 +160,7 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
       const isResearch = category === 'FACULTY_RESEARCH';
       const isFacultyCategory = isFaculty || category === 'FACULTY_WORKSHOP' || category === 'FACULTY_RESEARCH' || category === 'FACULTY_VOLUNTEER';
 
-      createPost({
+      const result = await createPost({
         title: title.trim(),
         description: description.trim(),
         instructions: instructions.trim() || undefined,
@@ -185,7 +185,14 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
         carpool_gender_pref: isTravel ? carpoolGenderPref : 'ANY',
       });
 
+      if (!result.success) {
+        setErrors({ form: result.error || 'Failed to save opportunity to database.' });
+        return;
+      }
+
       onClose();
+    } catch (err: any) {
+      setErrors({ form: err?.message || 'Error creating opportunity.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -763,6 +770,12 @@ export const CreatePostModal: React.FC<Props> = ({ isOpen, onClose, initialCateg
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {errors.form && (
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+            {errors.form}
           </div>
         )}
 

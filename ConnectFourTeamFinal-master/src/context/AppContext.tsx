@@ -37,7 +37,10 @@ import {
   saveFallbackNotifications,
   getFallbackODSlips,
   saveFallbackODSlips,
-  isSupabaseConfigured
+  isSupabaseConfigured,
+  createCloudOpportunity,
+  fetchOpportunities,
+  supabase
 } from '../lib/supabase';
 
 export type NavigationTab = 
@@ -103,7 +106,9 @@ interface AppContextType {
   updateCurrentUserProfile: (updates: Partial<UserProfile>) => void;
   
   // Real Opportunity actions
-  createPost: (postData: Partial<Post>) => Post;
+  createPost: (postData: Partial<Post>) => Promise<{ success: boolean; post?: Post; error?: string }>;
+  refreshEvents: () => Promise<void>;
+  isCloudConnected: boolean;
   joinPost: (postId: string, role?: string, message?: string) => Promise<{ success: boolean; message: string }>;
   withdrawApplication: (appId: string) => boolean;
   reviewApplication: (appId: string, status: 'ACCEPTED' | 'REJECTED', feedback?: string) => void;
@@ -212,6 +217,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authModalMode, setAuthModalMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(isSupabaseConfigured());
+
+  // Load shared cloud opportunities on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadSharedEvents = async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const cloudPosts = await fetchOpportunities();
+          if (isMounted && cloudPosts && cloudPosts.length > 0) {
+            setPosts(cloudPosts);
+            setIsCloudConnected(true);
+          }
+        } catch (err) {
+          console.error('Error loading cloud opportunities on mount:', err);
+          if (isMounted) setIsCloudConnected(false);
+        }
+      }
+    };
+    loadSharedEvents();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Listen to Supabase Auth state changes
+  useEffect(() => {
+    if (isSupabaseConfigured() && supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!session?.user && currentUser && currentUser.id.startsWith('usr-')) {
+          // Keep local profile if in offline mode
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [currentUser]);
+
+  const refreshEvents = async () => {
+    if (isSupabaseConfigured()) {
+      try {
+        const cloudPosts = await fetchOpportunities();
+        if (cloudPosts) {
+          setPosts(cloudPosts);
+          setIsCloudConnected(true);
+        }
+      } catch (err) {
+        console.error('Error refreshing cloud events:', err);
+        setIsCloudConnected(false);
+      }
+    }
+  };
 
   // Set active tab with role-awareness and backward compatibility mapping
   const setActiveTab = (tab: NavigationTab) => {
@@ -392,8 +446,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return canAccessScopedChat(user, post, applications);
   };
 
-  // Create real opportunity
-  const createPost = (postData: Partial<Post>): Post => {
+  // Create real opportunity with Supabase cloud persistence
+  const createPost = async (postData: Partial<Post>): Promise<{ success: boolean; post?: Post; error?: string }> => {
     const host = currentUser || {
       id: 'user-guest',
       full_name: 'Campus Organizer',
@@ -404,8 +458,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       interests: [],
     };
 
-    const newPost: Post = {
-      id: `post-${Date.now()}`,
+    const newPostData: Partial<Post> = {
+      ...postData,
       host_id: host.id,
       host_name: host.full_name,
       host_role: host.role,
@@ -441,28 +495,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       created_at: new Date().toISOString(),
     };
 
-    setPosts(prev => [newPost, ...prev]);
+    // Attempt cloud persistence if Supabase is configured
+    if (isSupabaseConfigured()) {
+      const cloudRes = await createCloudOpportunity(newPostData);
+      if (cloudRes.success && cloudRes.post) {
+        const savedPost = cloudRes.post;
+        setPosts(prev => [savedPost, ...prev]);
+        saveFallbackOpportunities([savedPost, ...posts]);
 
-    // Initial coordination welcome message
+        // Coordination welcome message
+        const welcomeMsg: Message = {
+          id: `msg-${Date.now()}`,
+          post_id: savedPost.id,
+          sender_id: host.id,
+          sender_name: host.full_name,
+          sender_role: host.role,
+          sender_roll: host.roll_number,
+          content: `Official collaboration room created for "${savedPost.title}".`,
+          created_at: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, welcomeMsg]);
+
+        try {
+          confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 } });
+        } catch {}
+
+        return { success: true, post: savedPost };
+      }
+
+      // If cloud write returned an error, return it clearly to the caller
+      return { success: false, error: cloudRes.error || 'Failed to save event to Supabase cloud.' };
+    }
+
+    // Local-first fallback for offline development mode
+    const localPost: Post = {
+      id: `post-${Date.now()}`,
+      ...newPostData,
+    } as Post;
+
+    setPosts(prev => [localPost, ...prev]);
+    saveFallbackOpportunities([localPost, ...posts]);
+
     const welcomeMsg: Message = {
       id: `msg-${Date.now()}`,
-      post_id: newPost.id,
+      post_id: localPost.id,
       sender_id: host.id,
       sender_name: host.full_name,
       sender_role: host.role,
       sender_roll: host.roll_number,
-      content: `Official collaboration room created for "${newPost.title}".`,
+      content: `Official collaboration room created for "${localPost.title}".`,
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, welcomeMsg]);
 
     try {
       confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 } });
-    } catch {
-      // Ignore if confetti not supported
-    }
+    } catch {}
 
-    return newPost;
+    return { success: true, post: localPost };
   };
 
   // Join or apply to opportunity
@@ -852,6 +942,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isMapModalOpen,
         setIsMapModalOpen,
         isSupabaseActive: isSupabaseConfigured(),
+        isCloudConnected,
+        refreshEvents,
         selectedCategoryFilter,
         setSelectedCategoryFilter,
         registerNewAccount,

@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build --prefix ConnectFourTeamFinal-master",
+  "outputDirectory": "ConnectFourTeamFinal-master/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

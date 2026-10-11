@@ -1,27 +1,32 @@
 import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
-import { 
-  UserProfile, 
-  Post, 
-  Application, 
-  Message, 
-  NotificationItem, 
-  ODSlip 
+import {
+  UserProfile,
+  Post,
+  Application,
+  Message,
+  NotificationItem,
+  ODSlip,
+  PostCategory,
+  UserRole
 } from '../types';
 
-// Environment variables
+// Environment variables: support both standard and publishable key naming
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  '';
 
 export const isSupabaseConfigured = (): boolean => {
   return Boolean(
-    supabaseUrl && 
-    supabaseAnonKey && 
+    supabaseUrl &&
+    supabaseAnonKey &&
     supabaseUrl.startsWith('http') &&
     !supabaseUrl.includes('your-project-id')
   );
 };
 
-// Create the Supabase client instance (or null if not configured)
+// Create the singleton Supabase client instance
 export const supabase: SupabaseClient | null = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
@@ -33,8 +38,8 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured()
   : null;
 
 /**
- * Storage keys for local-first fallback when Supabase credentials
- * are not yet provided in the environment.
+ * Storage keys for local-first fallback when offline or Supabase
+ * is not yet configured in the environment.
  */
 const FALLBACK_KEYS = {
   CURRENT_USER: 'connect_current_user_v3',
@@ -45,6 +50,63 @@ const FALLBACK_KEYS = {
   NOTIFICATIONS: 'connect_notifications_v3',
   OD_SLIPS: 'connect_od_slips_v3',
 };
+
+// ----------------------------------------------------------------------------
+// DATA SCHEMA RECONCILIATION MAPPERS (events <-> opportunities <-> Post)
+// ----------------------------------------------------------------------------
+
+export function mapDbRecordToPost(raw: any): Post {
+  const category: PostCategory = [
+    'STUDENT_CASUAL',
+    'STUDENT_CREATIVE',
+    'CARPOOL',
+    'FACULTY_WORKSHOP',
+    'FACULTY_RESEARCH',
+    'FACULTY_VOLUNTEER'
+  ].includes(raw.category) ? raw.category : 'STUDENT_CASUAL';
+
+  const hostRole: UserRole = ['FACULTY', 'ADMIN'].includes(raw.host_role) ? raw.host_role : 'STUDENT';
+
+  const startTime = raw.start_time || raw.event_date || raw.created_at || new Date().toISOString();
+  const endTime = raw.end_time || raw.event_date || startTime;
+
+  return {
+    id: String(raw.id),
+    host_id: raw.host_id || raw.user_id || 'campus-host',
+    host_name: raw.host_name || 'Campus Organizer',
+    host_role: hostRole,
+    host_designation: raw.host_designation,
+    title: raw.title || 'Untitled Opportunity',
+    description: raw.description || '',
+    instructions: raw.instructions || '',
+    category,
+    join_mode: raw.join_mode === 'LOCKED' ? 'LOCKED' : 'UNLOCKED',
+    status: raw.status || 'OPEN',
+    total_slots: Number(raw.total_slots || raw.capacity || 5),
+    filled_slots: Number(raw.filled_slots || 0),
+    required_skills: Array.isArray(raw.required_skills) ? raw.required_skills : (raw.skills || []),
+    eligible_departments: Array.isArray(raw.eligible_departments) ? raw.eligible_departments : ['ANY'],
+    eligible_years: Array.isArray(raw.eligible_years) ? raw.eligible_years : [2022, 2023, 2024, 2025],
+    venue_name: raw.venue_name || raw.location || 'Academic Block 1 (AB1)',
+    map_lat: raw.map_lat ? Number(raw.map_lat) : 10.9015,
+    map_lng: raw.map_lng ? Number(raw.map_lng) : 76.9012,
+    start_time: startTime,
+    end_time: endTime,
+    od_available: Boolean(raw.od_available),
+    od_details: raw.od_details || '',
+    od_hours: Number(raw.od_hours || (raw.od_available ? 8 : 0)),
+    research_perks: raw.research_perks || '',
+    weekly_commitment_hours: raw.weekly_commitment_hours ? Number(raw.weekly_commitment_hours) : undefined,
+    carpool_origin: raw.carpool_origin,
+    carpool_destination: raw.carpool_destination,
+    carpool_cost_split: raw.carpool_cost_split,
+    carpool_gender_pref: raw.carpool_gender_pref || 'ANY',
+    carpool_seats_available: raw.carpool_seats_available ? Number(raw.carpool_seats_available) : undefined,
+    carpool_notes: raw.carpool_notes,
+    target_roles: raw.target_roles || [],
+    created_at: raw.created_at || new Date().toISOString(),
+  };
+}
 
 // ----------------------------------------------------------------------------
 // AUTHENTICATION REPOSITORY
@@ -103,6 +165,14 @@ export async function signOutAuth(): Promise<{ error: Error | null }> {
   return { error: null };
 }
 
+export async function getCurrentAuthUser(): Promise<User | null> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data } = await supabase.auth.getUser();
+    return data.user;
+  }
+  return null;
+}
+
 // ----------------------------------------------------------------------------
 // PROFILES REPOSITORY
 // ----------------------------------------------------------------------------
@@ -128,12 +198,27 @@ export async function fetchProfileById(userId: string): Promise<UserProfile | nu
       .eq('id', userId)
       .maybeSingle();
 
-    if (error || !data) return null;
-    return data as UserProfile;
+    if (!error && data) {
+      return data as UserProfile;
+    }
   }
 
   const profiles = getFallbackProfiles();
   return profiles.find(p => p.id === userId) || null;
+}
+
+export async function fetchAllProfiles(): Promise<UserProfile[]> {
+  if (isSupabaseConfigured() && supabase) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data as UserProfile[];
+    }
+  }
+  return getFallbackProfiles();
 }
 
 export async function saveProfile(profile: UserProfile): Promise<{ success: boolean; error: Error | null }> {
@@ -141,7 +226,7 @@ export async function saveProfile(profile: UserProfile): Promise<{ success: bool
     const { error } = await supabase
       .from('profiles')
       .upsert(profile, { onConflict: 'id' });
-    return { success: !error, error };
+    if (!error) return { success: true, error: null };
   }
 
   // Fallback: save to localStorage
@@ -157,7 +242,7 @@ export async function saveProfile(profile: UserProfile): Promise<{ success: bool
 }
 
 // ----------------------------------------------------------------------------
-// OPPORTUNITIES REPOSITORY
+// OPPORTUNITIES / EVENTS REPOSITORY (RECONCILED FOR CLOUD PERSISTENCE)
 // ----------------------------------------------------------------------------
 
 export function getFallbackOpportunities(): Post[] {
@@ -173,19 +258,184 @@ export function saveFallbackOpportunities(posts: Post[]) {
   localStorage.setItem(FALLBACK_KEYS.OPPORTUNITIES, JSON.stringify(posts));
 }
 
+/**
+ * Fetches shared records from Supabase.
+ * Checks 'opportunities' first; if not found, falls back to 'events'.
+ */
 export async function fetchOpportunities(): Promise<Post[]> {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
+    // 1. Attempt reading from 'opportunities' table
+    const oppRes = await supabase
       .from('opportunities')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      return data as Post[];
+    if (!oppRes.error && oppRes.data) {
+      return oppRes.data.map(mapDbRecordToPost);
+    }
+
+    // 2. If 'opportunities' does not exist in schema cache, try 'events' table
+    if (oppRes.error?.code === 'PGRST205' || oppRes.error?.message?.includes('opportunities')) {
+      const eventRes = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!eventRes.error && eventRes.data) {
+        return eventRes.data.map(mapDbRecordToPost);
+      }
     }
   }
 
   return getFallbackOpportunities();
+}
+
+/**
+ * Creates and persists a new opportunity / event record in Supabase.
+ * Adapts to either 'opportunities' or 'events' depending on database schema.
+ */
+export async function createCloudOpportunity(
+  post: Partial<Post>
+): Promise<{ success: boolean; post?: Post; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return { success: false, error: 'Supabase client is not configured.' };
+  }
+
+  // 1. Try inserting into 'opportunities' table
+  const oppPayload = {
+    title: post.title,
+    description: post.description,
+    instructions: post.instructions || null,
+    category: post.category || 'STUDENT_CASUAL',
+    join_mode: post.join_mode || 'UNLOCKED',
+    status: post.status || 'OPEN',
+    total_slots: post.total_slots || 5,
+    filled_slots: post.filled_slots || 0,
+    required_skills: post.required_skills || [],
+    eligible_departments: post.eligible_departments || ['ANY'],
+    eligible_years: post.eligible_years || [2022, 2023, 2024, 2025],
+    venue_name: post.venue_name || 'Academic Block 1 (AB1)',
+    start_time: post.start_time,
+    end_time: post.end_time,
+    od_available: Boolean(post.od_available),
+    od_details: post.od_details || null,
+    od_hours: post.od_hours || 0,
+    carpool_origin: post.carpool_origin || null,
+    carpool_destination: post.carpool_destination || null,
+    carpool_cost_split: post.carpool_cost_split || null,
+    carpool_gender_pref: post.carpool_gender_pref || 'ANY',
+    host_id: post.host_id,
+    host_name: post.host_name,
+    host_role: post.host_role || 'STUDENT',
+  };
+
+  const oppInsert = await supabase
+    .from('opportunities')
+    .insert(oppPayload)
+    .select()
+    .single();
+
+  if (!oppInsert.error && oppInsert.data) {
+    return { success: true, post: mapDbRecordToPost(oppInsert.data) };
+  }
+
+  // 2. If 'opportunities' does not exist in schema cache, insert into 'events' table
+  if (oppInsert.error?.code === 'PGRST205' || oppInsert.error?.message?.includes('opportunities')) {
+    const eventPayload: Record<string, any> = {
+      title: post.title,
+      description: post.description,
+      category: post.category || 'STUDENT_CASUAL',
+      location: post.venue_name || 'Academic Block 1 (AB1)',
+      event_date: post.start_time || new Date().toISOString(),
+    };
+
+    // If host details can be passed, include them
+    if (post.host_name) eventPayload.host_name = post.host_name;
+    if (post.host_role) eventPayload.host_role = post.host_role;
+
+    const eventInsert = await supabase
+      .from('events')
+      .insert(eventPayload)
+      .select()
+      .single();
+
+    if (!eventInsert.error && eventInsert.data) {
+      return { success: true, post: mapDbRecordToPost(eventInsert.data) };
+    }
+
+    return {
+      success: false,
+      error: eventInsert.error?.message || 'Database insert failed on events table.'
+    };
+  }
+
+  return {
+    success: false,
+    error: oppInsert.error?.message || 'Database insert failed on opportunities table.'
+  };
+}
+
+/**
+ * Updates an existing opportunity / event in Supabase.
+ */
+export async function updateCloudOpportunity(
+  id: string,
+  updates: Partial<Post>
+): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return { success: false, error: 'Supabase client is not configured.' };
+  }
+
+  // Try opportunities table first
+  const oppRes = await supabase
+    .from('opportunities')
+    .update(updates)
+    .eq('id', id);
+
+  if (!oppRes.error) return { success: true };
+
+  // Fallback to events table
+  const eventRes = await supabase
+    .from('events')
+    .update({
+      title: updates.title,
+      description: updates.description,
+      location: updates.venue_name,
+      category: updates.category,
+      event_date: updates.start_time,
+    })
+    .eq('id', id);
+
+  if (!eventRes.error) return { success: true };
+
+  return { success: false, error: oppRes.error?.message || eventRes.error?.message };
+}
+
+/**
+ * Deletes an opportunity / event in Supabase.
+ */
+export async function deleteCloudOpportunity(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return { success: false, error: 'Supabase client is not configured.' };
+  }
+
+  const oppRes = await supabase
+    .from('opportunities')
+    .delete()
+    .eq('id', id);
+
+  if (!oppRes.error) return { success: true };
+
+  const eventRes = await supabase
+    .from('events')
+    .delete()
+    .eq('id', id);
+
+  if (!eventRes.error) return { success: true };
+
+  return { success: false, error: oppRes.error?.message || eventRes.error?.message };
 }
 
 // ----------------------------------------------------------------------------
