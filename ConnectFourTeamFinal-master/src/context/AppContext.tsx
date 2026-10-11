@@ -50,6 +50,8 @@ import {
   mapDbRecordToMessage,
   mapDbRecordToApplication,
   mapDbRecordToPost,
+  fetchAllProfiles,
+  saveProfile,
   supabase
 } from '../lib/supabase';
 
@@ -237,10 +239,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const loadSharedData = async () => {
       if (isSupabaseConfigured()) {
         try {
-          const [cloudPosts, cloudApps, cloudMsgs] = await Promise.all([
+          const [cloudPosts, cloudApps, cloudMsgs, cloudProfiles] = await Promise.all([
             fetchOpportunities(),
             fetchCloudApplications(),
-            fetchCloudMessages()
+            fetchCloudMessages(),
+            fetchAllProfiles()
           ]);
           if (isMounted) {
             if (cloudPosts && cloudPosts.length > 0) {
@@ -251,6 +254,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             if (cloudMsgs && cloudMsgs.length > 0) {
               setMessages(cloudMsgs);
+            }
+            if (cloudProfiles && cloudProfiles.length > 0) {
+              setAllUsers(cloudProfiles);
             }
             setIsCloudConnected(true);
           }
@@ -500,6 +506,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { role: _r, is_verified: _v, ...permittedUpdates } = updates;
     const updated: UserProfile = { ...currentUser, ...permittedUpdates };
     setCurrentUserState(updated);
+    saveProfile(updated);
     setAllUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
   };
 
@@ -534,6 +541,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setCurrentUser(newProfile);
+    saveProfile(newProfile);
+    setAllUsers(prev => [newProfile, ...prev.filter(u => u.id !== newProfile.id)]);
     return { success: true, userId, message: 'Account registered successfully.' };
   };
 

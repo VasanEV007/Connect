@@ -10,15 +10,34 @@ import {
   Mail, 
   Code, 
   Check, 
-  Send
+  Send,
+  ArrowUpDown,
+  Sparkles,
+  ShieldCheck,
+  Building,
+  X,
+  ExternalLink,
+  UserCheck
 } from 'lucide-react';
 
+type SortOption = 
+  | 'name-asc' 
+  | 'name-desc' 
+  | 'year-desc' 
+  | 'year-asc' 
+  | 'role-faculty' 
+  | 'skills-count' 
+  | 'dept-asc';
+
 export const FindPeopleDirectory: React.FC = () => {
-  const { allUsers, currentUser, posts, inviteUserToPost, setIsAuthModalOpen, setAuthModalMode } = useApp();
+  const { allUsers, currentUser, posts, inviteUserToPost, setIsAuthModalOpen, setAuthModalMode, setIsProfileModalOpen } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string>('ALL');
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
+  const [selectedSkillTag, setSelectedSkillTag] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
 
   // Candidate detail modal state
   const [viewingProfile, setViewingProfile] = useState<UserProfile | null>(null);
@@ -35,41 +54,126 @@ export const FindPeopleDirectory: React.FC = () => {
     return posts.filter(p => p.host_id === currentUser.id && p.status === 'OPEN');
   }, [posts, currentUser]);
 
-  // Filter candidates (excluding self)
-  const filteredUsers = useMemo(() => {
-    return allUsers.filter(user => {
-      if (currentUser && user.id === currentUser.id) return false;
+  // Curated popular skills tags for instant 1-click filtering
+  const popularSkillTags = [
+    'ALL',
+    'React',
+    'TypeScript',
+    'Python',
+    'PyTorch',
+    'ROS2',
+    'Node.js',
+    'SolidWorks',
+    'Linux',
+    'MATLAB',
+    'Embedded C',
+    'Figma',
+    'IoT',
+    'PostgreSQL'
+  ];
 
-      // Multi-term search
+  const departments = [
+    'ALL',
+    'Computer Science and Engineering',
+    'AI & Data Science',
+    'Automation and Robotics Engineering',
+    'Electronics and Communication Engineering',
+    'Electrical and Electronics Engineering',
+    'Mechanical Engineering',
+    'Cyber Security'
+  ];
+
+  // Filter and sort candidates (Includes all users, marking current user)
+  const processedUsers = useMemo(() => {
+    // 1. FILTERING
+    const filtered = allUsers.filter(user => {
+      // Search query across all mentioned details:
+      // Name, Roll, Designation, Department, Year, Skills, Interests, Bio, Email
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchName = user.full_name.toLowerCase().includes(q);
+        const matchName = user.full_name?.toLowerCase().includes(q) || false;
         const matchRoll = user.roll_number?.toLowerCase().includes(q) || false;
+        const matchDesig = user.designation?.toLowerCase().includes(q) || false;
+        const matchDept = user.department?.toLowerCase().includes(q) || false;
+        const matchYear = user.joining_year ? String(user.joining_year).includes(q) : false;
         const matchBio = user.bio?.toLowerCase().includes(q) || false;
-        const matchSkill = user.skills?.some(s => s.toLowerCase().includes(q));
-        const matchInterest = user.interests?.some(i => i.toLowerCase().includes(q));
-        if (!matchName && !matchRoll && !matchBio && !matchSkill && !matchInterest) {
+        const matchEmail = user.email?.toLowerCase().includes(q) || false;
+        const matchSkill = user.skills?.some(s => s.toLowerCase().includes(q)) || false;
+        const matchInterest = user.interests?.some(i => i.toLowerCase().includes(q)) || false;
+
+        if (
+          !matchName && 
+          !matchRoll && 
+          !matchDesig && 
+          !matchDept && 
+          !matchYear && 
+          !matchBio && 
+          !matchEmail && 
+          !matchSkill && 
+          !matchInterest
+        ) {
+          return false;
+        }
+      }
+
+      // Role filter
+      if (selectedRole !== 'ALL') {
+        if (user.role !== selectedRole) {
           return false;
         }
       }
 
       // Department filter
       if (selectedDept !== 'ALL') {
-        if (!user.department || !user.department.toUpperCase().includes(selectedDept)) {
+        const userDept = (user.department || '').toLowerCase();
+        const targetDept = selectedDept.toLowerCase();
+        if (!userDept.includes(targetDept) && !targetDept.includes(userDept)) {
           return false;
         }
       }
 
-      // Year filter
+      // Batch Year filter
       if (selectedYear !== 'ALL') {
         if (user.joining_year !== parseInt(selectedYear)) {
           return false;
         }
       }
 
+      // Skill tag filter
+      if (selectedSkillTag !== 'ALL') {
+        const hasSkill = user.skills?.some(s => s.toLowerCase() === selectedSkillTag.toLowerCase());
+        if (!hasSkill) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [allUsers, currentUser, searchQuery, selectedDept, selectedYear]);
+
+    // 2. SORTING by selected criteria
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name-asc':
+          return (a.full_name || '').localeCompare(b.full_name || '');
+        case 'name-desc':
+          return (b.full_name || '').localeCompare(a.full_name || '');
+        case 'year-desc':
+          return (b.joining_year || 0) - (a.joining_year || 0);
+        case 'year-asc':
+          return (a.joining_year || 9999) - (b.joining_year || 9999);
+        case 'role-faculty':
+          if (a.role === 'FACULTY' && b.role !== 'FACULTY') return -1;
+          if (b.role === 'FACULTY' && a.role !== 'FACULTY') return 1;
+          return (a.full_name || '').localeCompare(b.full_name || '');
+        case 'skills-count':
+          return (b.skills?.length || 0) - (a.skills?.length || 0);
+        case 'dept-asc':
+          return (a.department || '').localeCompare(b.department || '');
+        default:
+          return 0;
+      }
+    });
+  }, [allUsers, searchQuery, selectedRole, selectedDept, selectedYear, selectedSkillTag, sortBy]);
 
   const handleSendInvite = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,32 +201,50 @@ export const FindPeopleDirectory: React.FC = () => {
     }
   };
 
-  const departments = [
-    'ALL',
-    'COMPUTER SCIENCE',
-    'AUTOMATION AND ROBOTICS',
-    'ELECTRONICS',
-    'ELECTRICAL',
-    'MECHANICAL',
-    'AI & DATA SCIENCE',
-    'CYBER SECURITY'
-  ];
+  const hasActiveFilters = 
+    Boolean(searchQuery) || 
+    selectedRole !== 'ALL' || 
+    selectedDept !== 'ALL' || 
+    selectedYear !== 'ALL' || 
+    selectedSkillTag !== 'ALL';
+
+  const resetAllFilters = () => {
+    setSearchQuery('');
+    setSelectedRole('ALL');
+    setSelectedDept('ALL');
+    setSelectedYear('ALL');
+    setSelectedSkillTag('ALL');
+    setSortBy('name-asc');
+  };
 
   return (
     <div className="space-y-6">
       
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-          Find People & Collaborators
-        </h1>
-        <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
-          Connect with Amrita students and faculty researchers by technical skills, department, and project interests.
-        </p>
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)] flex items-center gap-2">
+            Find People & Collaborators
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-burgundy/10 text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold border border-[var(--color-burgundy)]/20">
+              Campus Directory
+            </span>
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
+            Discover and connect with Amrita students and faculty researchers. Search by technical skills, department, batch year, and interests.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs font-mono font-bold text-[var(--color-text-muted)] bg-[var(--color-surface-card)] px-3 py-1.5 rounded-xl border border-[var(--color-border)] shadow-sm">
+            Total Members: <span className="text-[var(--color-text-main)]">{allUsers.length}</span>
+          </span>
+        </div>
       </div>
 
-      {/* Search & Filter Controls */}
-      <div className="p-4 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] space-y-3 shadow-sm">
+      {/* Search, Filter & Sort Control Hub */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] space-y-4 shadow-sm">
+        
+        {/* Row 1: Search Input & Primary Sort */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
@@ -130,174 +252,329 @@ export const FindPeopleDirectory: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, roll number, department, or technical skill..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
+              placeholder="Search by name, roll number, department, skills (e.g. React, ROS2), interests..."
+              className="w-full pl-10 pr-8 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] transition-colors"
             />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-3 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Sort By Dropdown */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative flex items-center">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[var(--color-text-muted)] absolute left-3 pointer-events-none" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                aria-label="Sort collaborators by"
+                className="pl-8 pr-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs font-medium focus:outline-none focus:border-[var(--color-burgundy)] cursor-pointer"
+              >
+                <option value="name-asc">Sort: Name (A &rarr; Z)</option>
+                <option value="name-desc">Sort: Name (Z &rarr; A)</option>
+                <option value="year-desc">Sort: Batch (Newest First)</option>
+                <option value="year-asc">Sort: Batch (Oldest First)</option>
+                <option value="role-faculty">Sort: Role (Faculty First)</option>
+                <option value="skills-count">Sort: Most Skills</option>
+                <option value="dept-asc">Sort: Department (A &rarr; Z)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Secondary Filters (Role, Department, Batch Year) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-[var(--color-border)]">
+          {/* Role Filter */}
+          <div>
+            <label className="block text-[10px] uppercase font-bold tracking-wider text-[var(--color-text-muted)] mb-1">
+              Role Filter
+            </label>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] cursor-pointer"
+            >
+              <option value="ALL">All Roles (Students & Faculty)</option>
+              <option value="STUDENT">Students Only</option>
+              <option value="FACULTY">Faculty Mentors Only</option>
+            </select>
+          </div>
+
+          {/* Department Filter */}
+          <div>
+            <label className="block text-[10px] uppercase font-bold tracking-wider text-[var(--color-text-muted)] mb-1">
+              Department Filter
+            </label>
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] cursor-pointer"
             >
               <option value="ALL">All Departments</option>
               {departments.filter(d => d !== 'ALL').map(d => (
                 <option key={d} value={d}>{d}</option>
               ))}
             </select>
+          </div>
 
+          {/* Batch Year Filter */}
+          <div>
+            <label className="block text-[10px] uppercase font-bold tracking-wider text-[var(--color-text-muted)] mb-1">
+              Batch / Joining Year
+            </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)]"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-main)] text-xs focus:outline-none focus:border-[var(--color-burgundy)] cursor-pointer"
             >
               <option value="ALL">All Batches</option>
-              <option value="2021">Batch 2021</option>
-              <option value="2022">Batch 2022</option>
-              <option value="2023">Batch 2023</option>
-              <option value="2024">Batch 2024</option>
-              <option value="2025">Batch 2025</option>
+              <option value="2021">Batch 2021 (Final Year)</option>
+              <option value="2022">Batch 2022 (Third Year)</option>
+              <option value="2023">Batch 2023 (Second Year)</option>
+              <option value="2024">Batch 2024 (First Year)</option>
+              <option value="2025">Batch 2025 (Freshmen)</option>
             </select>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] pt-1">
-          <span>
-            Found <strong className="text-[var(--color-text-main)]">{filteredUsers.length}</strong> {filteredUsers.length === 1 ? 'collaborator' : 'collaborators'}
-          </span>
-          {(searchQuery || selectedDept !== 'ALL' || selectedYear !== 'ALL') && (
+        {/* Row 3: Quick Skill Filter Pills */}
+        <div className="pt-2">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[var(--color-burgundy)] dark:text-[#E5DED2]" />
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+              Quick Filter by Technical Skill:
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
+            {popularSkillTags.map(tag => {
+              const isSelected = selectedSkillTag === tag;
+              return (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedSkillTag(tag)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-[var(--color-burgundy)] text-[#E5DED2] shadow-sm'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] border border-[var(--color-border)]'
+                  }`}
+                >
+                  {tag === 'ALL' ? 'All Skills' : tag}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Results Count & Active Filter Reset */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-[var(--color-text-muted)] pt-2 border-t border-[var(--color-border)] gap-2">
+          <div className="flex items-center gap-2">
+            <span>
+              Showing <strong className="text-[var(--color-text-main)]">{processedUsers.length}</strong> of{' '}
+              <strong className="text-[var(--color-text-main)]">{allUsers.length}</strong> collaborators
+            </span>
+            {selectedSkillTag !== 'ALL' && (
+              <span className="px-2 py-0.5 rounded text-[10px] bg-burgundy/15 text-[var(--color-burgundy)] dark:text-[#E5DED2] font-bold">
+                Skill: {selectedSkillTag}
+              </span>
+            )}
+            {selectedRole !== 'ALL' && (
+              <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">
+                Role: {selectedRole}
+              </span>
+            )}
+          </div>
+
+          {hasActiveFilters && (
             <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedDept('ALL');
-                setSelectedYear('ALL');
-              }}
-              className="text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold hover:underline cursor-pointer"
+              onClick={resetAllFilters}
+              className="text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto"
             >
-              Reset filters
+              <X className="w-3.5 h-3.5" />
+              Reset all filters
             </button>
           )}
         </div>
+
       </div>
 
       {/* Directory Cards Grid */}
-      {filteredUsers.length === 0 ? (
+      {processedUsers.length === 0 ? (
         <div className="py-12">
           <EmptyState
-            title={allUsers.length === 0 ? "No collaborators registered yet" : "No matching people found"}
-            description={
-              allUsers.length === 0
-                ? "The directory updates automatically when students and faculty create their Connect profiles."
-                : "Try clearing your search terms or expanding department filters."
-            }
+            title="No matching collaborators found"
+            description="Try clearing search keywords, selecting 'All Departments', or picking another technical skill tag."
           />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredUsers.map(user => (
-            <div
-              key={user.id}
-              className="rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border)] p-5 flex flex-col justify-between hover:border-[var(--color-blue-grey)] transition-all shadow-sm"
-            >
-              <div className="space-y-3">
-                
-                {/* Header: UserAvatar, Name, Roll */}
-                <div className="flex items-start gap-3">
-                  <UserAvatar name={user.full_name} role={user.role} size="md" />
+          {processedUsers.map(user => {
+            const isSelf = currentUser && user.id === currentUser.id;
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                      <h3 
-                        onClick={() => setViewingProfile(user)}
-                        className="font-bold text-sm text-[var(--color-text-main)] truncate cursor-pointer hover:text-[var(--color-burgundy)] dark:hover:text-[#FFFFFF] transition-colors"
+            return (
+              <div
+                key={user.id}
+                className={`rounded-2xl bg-[var(--color-surface-card)] border transition-all shadow-sm flex flex-col justify-between p-5 hover:shadow-md ${
+                  isSelf 
+                    ? 'border-[var(--color-burgundy)]/40 ring-1 ring-[var(--color-burgundy)]/30' 
+                    : 'border-[var(--color-border)] hover:border-[var(--color-blue-grey)]'
+                }`}
+              >
+                <div className="space-y-3.5">
+                  
+                  {/* Card Header: Avatar, Name, Role, Verified */}
+                  <div className="flex items-start gap-3">
+                    <UserAvatar name={user.full_name} role={user.role} size="md" />
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <h3 
+                            onClick={() => setViewingProfile(user)}
+                            className="font-bold text-sm text-[var(--color-text-main)] truncate cursor-pointer hover:text-[var(--color-burgundy)] dark:hover:text-[#FFFFFF] transition-colors"
+                          >
+                            {user.full_name}
+                          </h3>
+                          {isSelf && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-burgundy/20 text-[var(--color-burgundy)] dark:text-[#E5DED2] font-bold">
+                              You
+                            </span>
+                          )}
+                          {user.is_verified && (
+                            <span title="Amrita Verified Member">
+                              <ShieldCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            </span>
+                          )}
+                        </div>
+
+                        <Badge variant={user.role === 'FACULTY' ? 'warning' : 'default'} size="sm">
+                          {user.role}
+                        </Badge>
+                      </div>
+
+                      {/* Roll or Designation */}
+                      <p className="text-[11px] font-mono text-[var(--color-text-main)] font-semibold truncate mt-0.5">
+                        {user.roll_number || user.designation || 'Amrita Campus Member'}
+                      </p>
+
+                      {/* Department & Batch Year */}
+                      <p className="text-[11px] text-[var(--color-text-muted)] truncate mt-0.5">
+                        {user.department} {user.joining_year ? `• Batch ${user.joining_year}` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bio Description */}
+                  {user.bio ? (
+                    <p className="text-xs text-[var(--color-text-muted)] leading-relaxed line-clamp-2">
+                      {user.bio}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-[var(--color-text-muted)] italic">
+                      Open to collaborative campus projects and hackathon teams.
+                    </p>
+                  )}
+
+                  {/* Technical Skills Pills */}
+                  {user.skills && user.skills.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] block">
+                        Skills
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {user.skills.slice(0, 4).map((skill, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setSelectedSkillTag(skill)}
+                            className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)] hover:border-[var(--color-burgundy)] cursor-pointer transition-colors"
+                            title={`Filter by ${skill}`}
+                          >
+                            {skill}
+                          </button>
+                        ))}
+                        {user.skills.length > 4 && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] text-[var(--color-text-muted)] font-mono">
+                            +{user.skills.length - 4} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Interests Preview */}
+                  {user.interests && user.interests.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] block">
+                        Interests
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {user.interests.slice(0, 3).map((interest, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-0.5 rounded text-[10px] text-[var(--color-text-muted)] bg-[var(--color-surface)]/70 border border-[var(--color-border)]"
+                          >
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Bottom Actions Row */}
+                <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-[var(--color-text-muted)] text-xs">
+                    {user.github_url && (
+                      <a href={user.github_url} target="_blank" rel="noreferrer" className="hover:text-[var(--color-text-main)] transition-colors" title="GitHub">
+                        <Code className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {user.linkedin_url && (
+                      <a href={user.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-[var(--color-text-main)] transition-colors" title="LinkedIn">
+                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                          <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setViewingProfile(user)}
+                      className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-main)] text-xs font-semibold cursor-pointer transition-colors"
+                    >
+                      View Details
+                    </button>
+
+                    {isSelf ? (
+                      <button
+                        onClick={() => setIsProfileModalOpen(true)}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-main)] text-xs font-semibold hover:border-[var(--color-burgundy)] cursor-pointer"
                       >
-                        {user.full_name}
-                      </h3>
-                      <Badge variant={user.role === 'FACULTY' ? 'warning' : 'default'}>
-                        {user.role}
-                      </Badge>
-                    </div>
-
-                    <p className="text-[11px] font-mono text-[var(--color-text-main)] font-semibold truncate mt-0.5">
-                      {user.roll_number || user.designation || user.department}
-                    </p>
-
-                    <p className="text-[11px] text-[var(--color-text-muted)] truncate">
-                      {user.department} {user.joining_year ? `• Batch ${user.joining_year}` : ''}
-                    </p>
+                        Edit Profile
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleInviteClick(user)}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <Mail className="w-3 h-3" />
+                        Invite
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Bio */}
-                {user.bio && (
-                  <p className="text-xs text-[var(--color-text-muted)] leading-relaxed line-clamp-2">
-                    {user.bio}
-                  </p>
-                )}
-
-                {/* Skills */}
-                {user.skills && user.skills.length > 0 && (
-                  <div className="space-y-1 pt-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] block">
-                      Skills
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {user.skills.slice(0, 4).map((skill, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)]"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                      {user.skills.length > 4 && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] text-[var(--color-text-muted)]">
-                          +{user.skills.length - 4}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
               </div>
-
-              {/* Bottom Actions */}
-              <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-[var(--color-text-muted)] text-xs">
-                  {user.github_url && (
-                    <a href={user.github_url} target="_blank" rel="noreferrer" className="hover:text-[var(--color-text-main)] transition-colors" title="GitHub">
-                      <Code className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                  {user.linkedin_url && (
-                    <a href={user.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-[var(--color-text-main)] transition-colors" title="LinkedIn">
-                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
-                      </svg>
-                    </a>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setViewingProfile(user)}
-                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)] text-[var(--color-text-main)] text-xs font-semibold cursor-pointer"
-                  >
-                    Profile
-                  </button>
-
-                  <button
-                    onClick={() => handleInviteClick(user)}
-                    className="px-3 py-1.5 rounded-lg bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                  >
-                    <Mail className="w-3 h-3" />
-                    Invite
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -310,10 +587,12 @@ export const FindPeopleDirectory: React.FC = () => {
           maxWidth="lg"
         >
           <div className="p-6 space-y-5 text-xs sm:text-sm">
+            
+            {/* Header */}
             <div className="flex items-start gap-4">
               <UserAvatar name={viewingProfile.full_name} role={viewingProfile.role} size="lg" />
 
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-base text-[var(--color-text-main)]">
                     {viewingProfile.full_name}
@@ -321,33 +600,61 @@ export const FindPeopleDirectory: React.FC = () => {
                   <Badge variant={viewingProfile.role === 'FACULTY' ? 'warning' : 'default'}>
                     {viewingProfile.role}
                   </Badge>
+                  {viewingProfile.is_verified && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-500/15 text-blue-500 font-bold border border-blue-500/30">
+                      <ShieldCheck className="w-3 h-3" /> Verified Member
+                    </span>
+                  )}
                 </div>
 
-                <p className="text-xs text-[var(--color-text-main)] font-mono mt-0.5">
-                  {viewingProfile.roll_number || viewingProfile.designation}
+                <p className="text-xs text-[var(--color-text-main)] font-mono font-semibold mt-0.5">
+                  {viewingProfile.roll_number || viewingProfile.designation || 'Amrita Campus Member'}
                 </p>
 
-                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                  {viewingProfile.department}
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5 flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5" />
+                  {viewingProfile.department} {viewingProfile.joining_year ? `• Batch ${viewingProfile.joining_year}` : ''}
                 </p>
+
+                {viewingProfile.cabin_or_lab && (
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    Lab / Cabin: <span className="text-[var(--color-text-main)] font-medium">{viewingProfile.cabin_or_lab}</span>
+                  </p>
+                )}
               </div>
             </div>
 
+            {/* Email contact */}
+            <div className="p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-between gap-2">
+              <span className="text-xs font-mono text-[var(--color-text-main)]">
+                {viewingProfile.email}
+              </span>
+              <a
+                href={`mailto:${viewingProfile.email}`}
+                className="px-2.5 py-1 rounded-lg bg-[var(--color-burgundy)] text-[#E5DED2] text-xs font-bold hover:bg-[#5F1023] transition-colors flex items-center gap-1"
+              >
+                <Mail className="w-3 h-3" />
+                Contact
+              </a>
+            </div>
+
+            {/* Bio */}
             {viewingProfile.bio && (
               <div className="p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
-                <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-1">About</h4>
+                <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-1">About & Research Focus</h4>
                 <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
                   {viewingProfile.bio}
                 </p>
               </div>
             )}
 
+            {/* Skills */}
             {viewingProfile.skills && viewingProfile.skills.length > 0 && (
               <div>
                 <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-2">Technical Competencies</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {viewingProfile.skills.map((s, idx) => (
-                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)] text-xs">
+                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)] text-xs font-medium">
                       {s}
                     </span>
                   ))}
@@ -355,12 +662,13 @@ export const FindPeopleDirectory: React.FC = () => {
               </div>
             )}
 
+            {/* Interests */}
             {viewingProfile.interests && viewingProfile.interests.length > 0 && (
               <div>
-                <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-2">Interests & Activities</h4>
+                <h4 className="font-bold text-[var(--color-text-main)] text-xs mb-2">Interests & Campus Activities</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {viewingProfile.interests.map((it, idx) => (
-                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[var(--color-surface)] text-[var(--color-text-main)] border border-[var(--color-border)] text-xs">
+                    <span key={idx} className="px-2.5 py-1 rounded-lg bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] text-xs">
                       {it}
                     </span>
                   ))}
@@ -368,19 +676,60 @@ export const FindPeopleDirectory: React.FC = () => {
               </div>
             )}
 
+            {/* External Links */}
+            {(viewingProfile.github_url || viewingProfile.linkedin_url || viewingProfile.portfolio_url) && (
+              <div className="flex items-center gap-3 pt-1 border-t border-[var(--color-border)]">
+                {viewingProfile.github_url && (
+                  <a
+                    href={viewingProfile.github_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold hover:underline flex items-center gap-1"
+                  >
+                    <Code className="w-3.5 h-3.5" /> GitHub Profile
+                  </a>
+                )}
+                {viewingProfile.linkedin_url && (
+                  <a
+                    href={viewingProfile.linkedin_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-[var(--color-burgundy)] dark:text-[#E5DED2] font-semibold hover:underline flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> LinkedIn
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div className="pt-2">
-              <button
-                onClick={() => {
-                  const userToInvite = viewingProfile;
-                  setViewingProfile(null);
-                  handleInviteClick(userToInvite);
-                }}
-                className="w-full py-2.5 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
-              >
-                <Mail className="w-4 h-4" />
-                Invite to Event
-              </button>
+              {currentUser && viewingProfile.id === currentUser.id ? (
+                <button
+                  onClick={() => {
+                    setViewingProfile(null);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  Edit My Profile
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    const userToInvite = viewingProfile;
+                    setViewingProfile(null);
+                    handleInviteClick(userToInvite);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[var(--color-burgundy)] hover:bg-[#5F1023] text-[#E5DED2] font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <Mail className="w-4 h-4" />
+                  Invite to Event
+                </button>
+              )}
             </div>
+
           </div>
         </Modal>
       )}
@@ -391,7 +740,7 @@ export const FindPeopleDirectory: React.FC = () => {
           isOpen={Boolean(invitingUser)}
           onClose={() => setInvitingUser(null)}
           title={`Invite ${invitingUser.full_name}`}
-          description="Send an invitation to join one of your hosted events."
+          description="Send an invitation to join one of your hosted campus events."
           maxWidth="md"
         >
           <form onSubmit={handleSendInvite} className="p-6 space-y-4 text-xs">
