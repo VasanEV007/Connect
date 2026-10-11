@@ -194,192 +194,24 @@ export async function getCurrentAuthUser(): Promise<User | null> {
 // PROFILES REPOSITORY (AMRITA CAMPUS COMMUNITY DIRECTORY)
 // ----------------------------------------------------------------------------
 
-export const CAMPUS_SEED_PROFILES: UserProfile[] = [
-  {
-    id: 'usr-faculty-1',
-    full_name: 'Dr. Preetha R',
-    email: 'preetha@cb.amrita.edu',
-    role: 'FACULTY',
-    designation: 'Professor & Head',
-    department: 'Computer Science and Engineering',
-    cabin_or_lab: 'Academic Block 1 (AB1) - Room 304',
-    bio: 'Lead researcher in distributed cloud computing, federated learning, and high-performance algorithms.',
-    skills: ['Distributed Systems', 'Cloud Computing', 'AI / ML', 'Kubernetes', 'Go'],
-    interests: ['Cloud Architecture', 'Research Grants', 'Hackathons'],
-    is_verified: true,
-    created_at: '2026-08-01T09:00:00Z',
-  },
-  {
-    id: 'usr-faculty-2',
-    full_name: 'Dr. Suresh Kumar',
-    email: 'suresh@cb.amrita.edu',
-    role: 'FACULTY',
-    designation: 'Associate Professor',
-    department: 'Automation and Robotics Engineering',
-    cabin_or_lab: 'Academic Block 2 (AB2) - Robotics Research Lab',
-    bio: 'Robotics systems mentor directing autonomous aerial drones and ROS2 perception pipelines.',
-    skills: ['ROS2', 'Kinematics', 'Computer Vision', 'Control Systems', 'C++'],
-    interests: ['Autonomous UAVs', 'Robotics Competitions', 'Embedded Firmware'],
-    is_verified: true,
-    created_at: '2026-08-10T10:00:00Z',
-  },
-  {
-    id: 'usr-faculty-3',
-    full_name: 'Dr. Nandini Menon',
-    email: 'nandini@cb.amrita.edu',
-    role: 'FACULTY',
-    designation: 'Associate Professor',
-    department: 'AI & Data Science',
-    cabin_or_lab: 'Academic Block 1 (AB1) - AI Center of Excellence',
-    bio: 'Specializing in deep learning, multimodal vision-language models, and responsible AI governance.',
-    skills: ['PyTorch', 'Deep Learning', 'Computer Vision', 'NLP', 'Python'],
-    interests: ['Generative AI', 'Medical Image Computing', 'Student Research'],
-    is_verified: true,
-    created_at: '2026-08-15T11:00:00Z',
-  },
-  {
-    id: 'usr-student-1',
-    full_name: 'Vasanth Kumar',
-    email: 'vasan@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4CSE23001',
-    department: 'Computer Science and Engineering',
-    joining_year: 2023,
-    bio: 'Third-year undergraduate engineer passionate about full-stack web platforms and cloud microservices.',
-    skills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'TailwindCSS'],
-    interests: ['Web Platforms', 'Open Source', 'Hackathons'],
-    is_verified: true,
-    created_at: '2026-09-01T08:00:00Z',
-  },
-  {
-    id: 'usr-student-2',
-    full_name: 'Aarav Patel',
-    email: 'aarav@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4CSE23099',
-    department: 'Computer Science and Engineering',
-    joining_year: 2023,
-    bio: 'Building reactive systems, modern design frameworks, and real-time multiplayer collaborative tools.',
-    skills: ['React', 'TypeScript', 'Next.js', 'Supabase', 'WebSockets'],
-    interests: ['Frontend Engineering', 'UI/UX', 'Collaborative Games'],
-    is_verified: true,
-    created_at: '2026-09-05T09:30:00Z',
-  },
-  {
-    id: 'usr-student-3',
-    full_name: 'Priya Sharma',
-    email: 'priya@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4AID23042',
-    department: 'AI & Data Science',
-    joining_year: 2023,
-    bio: 'Focused on applied machine learning pipelines, predictive analytics, and conversational AI systems.',
-    skills: ['Python', 'PyTorch', 'TensorFlow', 'Scikit-Learn', 'Pandas'],
-    interests: ['Machine Learning', 'Data Visualization', 'NLP Research'],
-    is_verified: true,
-    created_at: '2026-09-10T10:00:00Z',
-  },
-  {
-    id: 'usr-student-4',
-    full_name: 'Rohan Verma',
-    email: 'rohan@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4ARE22018',
-    department: 'Automation and Robotics Engineering',
-    joining_year: 2022,
-    bio: 'Fourth-year robotics engineer with experience in mobile robot navigation, SLAM, and hardware integration.',
-    skills: ['ROS2', 'C++', 'OpenCV', 'LiDAR SLAM', 'Arduino'],
-    interests: ['Autonomous Rovers', 'Mechatronics', 'Embedded Systems'],
-    is_verified: true,
-    created_at: '2026-09-12T11:15:00Z',
-  },
-  {
-    id: 'usr-student-5',
-    full_name: 'Ananya Iyer',
-    email: 'ananya@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4ECE24015',
-    department: 'Electronics and Communication Engineering',
-    joining_year: 2024,
-    bio: 'Second-year ECE student building smart IoT telemetry devices and low-power microcontrollers.',
-    skills: ['Embedded C', 'IoT', 'ESP32', 'PCB Design', 'Verilog'],
-    interests: ['Edge Computing', 'Robotics Hardware', 'Smart Campus'],
-    is_verified: true,
-    created_at: '2026-09-15T12:00:00Z',
-  },
-  {
-    id: 'usr-student-6',
-    full_name: 'Karthik Raja',
-    email: 'karthik@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4ME22055',
-    department: 'Mechanical Engineering',
-    joining_year: 2022,
-    bio: 'Formula student race vehicle mechanical lead specializing in CAD modeling, structural FEA, and 3D printing.',
-    skills: ['SolidWorks', 'ANSYS FEA', 'MATLAB', 'Additive Manufacturing', 'GD&T'],
-    interests: ['Motorsports', 'Automotive Systems', 'Aerodynamics'],
-    is_verified: true,
-    created_at: '2026-09-18T14:30:00Z',
-  },
-  {
-    id: 'usr-student-7',
-    full_name: 'Meera Krishnan',
-    email: 'meera@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4CYS23030',
-    department: 'Cyber Security',
-    joining_year: 2023,
-    bio: 'Active CTF player and security researcher interested in binary exploitation, cryptography, and network defense.',
-    skills: ['Linux', 'Wireshark', 'Cryptography', 'Penetration Testing', 'Python'],
-    interests: ['CTF Challenges', 'Application Security', 'Zero Trust'],
-    is_verified: true,
-    created_at: '2026-09-20T16:00:00Z',
-  },
-  {
-    id: 'usr-student-8',
-    full_name: 'Siddharth Nair',
-    email: 'siddharth@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4EEE24012',
-    department: 'Electrical and Electronics Engineering',
-    joining_year: 2024,
-    bio: 'Second-year EEE undergraduate exploring EV powertrain circuits, battery management systems, and MATLAB.',
-    skills: ['MATLAB', 'Simulink', 'Power Electronics', 'Circuit Simulation', 'C'],
-    interests: ['Electric Vehicles', 'Renewable Energy', 'Battery Management'],
-    is_verified: true,
-    created_at: '2026-09-22T09:45:00Z',
-  },
-  {
-    id: 'usr-student-9',
-    full_name: 'Divya Nambiar',
-    email: 'divya@cb.students.amrita.edu',
-    role: 'STUDENT',
-    roll_number: 'CB.EN.U4CSE25088',
-    department: 'Computer Science and Engineering',
-    joining_year: 2025,
-    bio: 'First-year CSE student enthusiast enthusiastic about UI/UX design, Figma prototyping, and web frontend.',
-    skills: ['Figma', 'HTML/CSS', 'JavaScript', 'UI/UX Design', 'Python'],
-    interests: ['Design Systems', 'Campus Clubs', 'Creative Tech'],
-    is_verified: true,
-    created_at: '2026-09-25T11:00:00Z',
-  }
-];
+export const CAMPUS_SEED_PROFILES: UserProfile[] = [];
 
 export function getFallbackProfiles(): UserProfile[] {
   try {
     const data = localStorage.getItem(FALLBACK_KEYS.PROFILES);
-    const local = data ? JSON.parse(data) : [];
-    const map = new Map<string, UserProfile>();
-    CAMPUS_SEED_PROFILES.forEach(p => map.set(p.id, p));
-    local.forEach((p: UserProfile) => map.set(p.id, p));
-    return Array.from(map.values());
+    if (!data) return [];
+    const local = JSON.parse(data);
+    return Array.isArray(local)
+      ? local.filter((p: UserProfile) => p && !p.id.startsWith('usr-faculty-') && !p.id.startsWith('usr-student-'))
+      : [];
   } catch {
-    return CAMPUS_SEED_PROFILES;
+    return [];
   }
 }
 
 export function saveFallbackProfiles(profiles: UserProfile[]) {
-  localStorage.setItem(FALLBACK_KEYS.PROFILES, JSON.stringify(profiles));
+  const clean = profiles.filter(p => p && !p.id.startsWith('usr-faculty-') && !p.id.startsWith('usr-student-'));
+  localStorage.setItem(FALLBACK_KEYS.PROFILES, JSON.stringify(clean));
 }
 
 export async function fetchProfileById(userId: string): Promise<UserProfile | null> {
@@ -391,7 +223,26 @@ export async function fetchProfileById(userId: string): Promise<UserProfile | nu
       .maybeSingle();
 
     if (!error && data) {
-      return data as UserProfile;
+      return {
+        id: String(data.id),
+        full_name: data.full_name || 'Amrita Member',
+        email: data.email || '',
+        role: (data.role as UserRole) || 'STUDENT',
+        roll_number: data.roll_number || undefined,
+        department: data.department || 'Engineering',
+        joining_year: data.joining_year ? Number(data.joining_year) : undefined,
+        gender: data.gender,
+        bio: data.bio || '',
+        portfolio_url: data.portfolio_url,
+        github_url: data.github_url,
+        linkedin_url: data.linkedin_url,
+        skills: Array.isArray(data.skills) ? data.skills : [],
+        interests: Array.isArray(data.interests) ? data.interests : [],
+        designation: data.designation,
+        cabin_or_lab: data.cabin_or_lab,
+        is_verified: Boolean(data.is_verified),
+        created_at: data.created_at || new Date().toISOString(),
+      };
     }
   }
 
@@ -400,46 +251,42 @@ export async function fetchProfileById(userId: string): Promise<UserProfile | nu
 }
 
 export async function fetchAllProfiles(): Promise<UserProfile[]> {
-  const map = new Map<string, UserProfile>();
-  CAMPUS_SEED_PROFILES.forEach(p => map.set(p.id, p));
-
   if (isSupabaseConfigured() && supabase) {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      data.forEach((raw: any) => {
-        map.set(raw.id, {
-          id: String(raw.id),
-          full_name: raw.full_name || 'Amrita Member',
-          email: raw.email || '',
-          role: (raw.role as UserRole) || 'STUDENT',
-          roll_number: raw.roll_number || undefined,
-          department: raw.department || 'Engineering',
-          joining_year: raw.joining_year ? Number(raw.joining_year) : undefined,
-          gender: raw.gender,
-          bio: raw.bio || '',
-          portfolio_url: raw.portfolio_url,
-          github_url: raw.github_url,
-          linkedin_url: raw.linkedin_url,
-          skills: Array.isArray(raw.skills) ? raw.skills : [],
-          interests: Array.isArray(raw.interests) ? raw.interests : [],
-          designation: raw.designation,
-          cabin_or_lab: raw.cabin_or_lab,
-          is_verified: Boolean(raw.is_verified),
-          created_at: raw.created_at || new Date().toISOString(),
-        });
-      });
+    if (!error && data) {
+      const dbProfiles: UserProfile[] = data.map((raw: any) => ({
+        id: String(raw.id),
+        full_name: raw.full_name || 'Amrita Member',
+        email: raw.email || '',
+        role: (raw.role as UserRole) || 'STUDENT',
+        roll_number: raw.roll_number || undefined,
+        department: raw.department || 'Engineering',
+        joining_year: raw.joining_year ? Number(raw.joining_year) : undefined,
+        gender: raw.gender,
+        bio: raw.bio || '',
+        portfolio_url: raw.portfolio_url,
+        github_url: raw.github_url,
+        linkedin_url: raw.linkedin_url,
+        skills: Array.isArray(raw.skills) ? raw.skills : [],
+        interests: Array.isArray(raw.interests) ? raw.interests : [],
+        designation: raw.designation,
+        cabin_or_lab: raw.cabin_or_lab,
+        is_verified: Boolean(raw.is_verified),
+        created_at: raw.created_at || new Date().toISOString(),
+      }));
+
+      // Cache strictly the real database profiles
+      saveFallbackProfiles(dbProfiles);
+      return dbProfiles;
     }
   }
 
-  // Also include localStorage customized profiles
-  const local = getFallbackProfiles();
-  local.forEach(p => map.set(p.id, p));
-
-  return Array.from(map.values());
+  // Only if completely offline or unconfigured, return cached local profiles
+  return getFallbackProfiles();
 }
 
 export async function saveProfile(profile: UserProfile): Promise<{ success: boolean; error: Error | null }> {
