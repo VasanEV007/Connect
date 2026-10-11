@@ -21,6 +21,7 @@ import {
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { EmptyState } from './ui/EmptyState';
+import { isPostHost } from '../utils/security';
 
 export const MyActivitiesModule: React.FC = () => {
   const { 
@@ -47,7 +48,7 @@ export const MyActivitiesModule: React.FC = () => {
   // Applications for events hosted by current user
   const applicationsForMyEvents = useMemo(() => {
     if (!currentUser) return [];
-    const myPostIds = new Set(posts.filter(p => p.host_id === currentUser.id).map(p => p.id));
+    const myPostIds = new Set(posts.filter(p => isPostHost(currentUser, p)).map(p => p.id));
     return applications.filter(a => myPostIds.has(a.post_id));
   }, [applications, posts, currentUser]);
 
@@ -74,7 +75,7 @@ export const MyActivitiesModule: React.FC = () => {
   // Hosted by me
   const hostedByMe = useMemo(() => {
     if (!currentUser) return [];
-    return posts.filter(p => p.host_id === currentUser.id);
+    return posts.filter(p => isPostHost(currentUser, p));
   }, [posts, currentUser]);
 
   // My OD Slips

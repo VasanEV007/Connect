@@ -45,7 +45,8 @@ export function canAccessFacultyPortal(user: UserProfile | null | undefined): bo
  * Checks if user is permitted to review applications for a post (must be host)
  */
 export function isPostHost(user: UserProfile | null | undefined, post: Post | null | undefined): boolean {
-  return Boolean(user && post && post.host_id === user.id);
+  if (!user || !post) return false;
+  return Boolean(post.host_id === user.id || (user.email && post.host_id === user.email));
 }
 
 /**

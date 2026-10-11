@@ -4,6 +4,7 @@ import { Post } from '../types';
 import { ClashDetail } from '../utils/clashDetector';
 import { UserAvatar } from './ui/UserAvatar';
 import { Badge } from './ui/Badge';
+import { isPostHost } from '../utils/security';
 import { 
   X, 
   Calendar, 
@@ -60,7 +61,7 @@ export const PostDetailModal: React.FC<Props> = ({ post, onClose }) => {
 
   if (!post) return null;
 
-  const isHost = currentUser ? post.host_id === currentUser.id : false;
+  const isHost = isPostHost(currentUser, post);
   const existingApp = currentUser ? applications.find(a => a.post_id === post.id && a.applicant_id === currentUser.id) : undefined;
   const isAccepted = existingApp?.status === 'ACCEPTED';
   const isPending = existingApp?.status === 'PENDING';

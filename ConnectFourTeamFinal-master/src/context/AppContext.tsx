@@ -45,6 +45,11 @@ import {
   createCloudApplication,
   updateCloudApplicationStatus,
   deleteCloudApplication,
+  fetchCloudMessages,
+  sendCloudMessage,
+  mapDbRecordToMessage,
+  mapDbRecordToApplication,
+  mapDbRecordToPost,
   supabase
 } from '../lib/supabase';
 
@@ -120,7 +125,8 @@ interface AppContextType {
   reviewApplication: (appId: string, status: 'ACCEPTED' | 'REJECTED', feedback?: string) => Promise<{ success: boolean; message: string }>;
   markAttendance: (appId: string, attended: boolean) => void;
   generateODSlip: (appId: string) => ODSlip | null;
-  sendMessage: (postId: string, content: string) => boolean;
+  sendMessage: (postId: string, content: string) => Promise<boolean> | boolean;
+  refreshMessages: (postId?: string) => Promise<void>;
   inviteUserToPost: (targetUserId: string, postId: string, note?: string) => boolean;
   acceptInvite: (notificationId: string, postId: string) => void;
   declineInvite: (notificationId: string) => void;
@@ -231,9 +237,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const loadSharedData = async () => {
       if (isSupabaseConfigured()) {
         try {
-          const [cloudPosts, cloudApps] = await Promise.all([
+          const [cloudPosts, cloudApps, cloudMsgs] = await Promise.all([
             fetchOpportunities(),
-            fetchCloudApplications()
+            fetchCloudApplications(),
+            fetchCloudMessages()
           ]);
           if (isMounted) {
             if (cloudPosts && cloudPosts.length > 0) {
@@ -241,6 +248,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             if (cloudApps) {
               setApplications(cloudApps);
+            }
+            if (cloudMsgs && cloudMsgs.length > 0) {
+              setMessages(cloudMsgs);
             }
             setIsCloudConnected(true);
           }
@@ -254,22 +264,100 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => { isMounted = false; };
   }, []);
 
-  // Realtime subscription for applications table changes
+  // Comprehensive Realtime subscription for applications, opportunities, and group chat messages
   useEffect(() => {
     if (isSupabaseConfigured() && supabase) {
       const channel = supabase
-        .channel('connect-applications-sync')
+        .channel('connect-live-sync')
+        // 1. Applications changes (join requests, approvals, rejections)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'applications' },
-          async () => {
+          async (payload) => {
             try {
+              if (payload.eventType === 'INSERT' && payload.new) {
+                const newApp = mapDbRecordToApplication(payload.new);
+                setApplications(prev => [newApp, ...prev.filter(a => a.id !== newApp.id)]);
+              } else if (payload.eventType === 'UPDATE' && payload.new) {
+                const updatedApp = mapDbRecordToApplication(payload.new);
+                setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
+                // Automatically reflect participant counts without page reload
+                if (updatedApp.status === 'ACCEPTED') {
+                  setPosts(prev => prev.map(p => {
+                    if (p.id === updatedApp.post_id) {
+                      const newFilled = Math.min(p.total_slots, p.filled_slots + 1);
+                      return { ...p, filled_slots: newFilled, status: newFilled >= p.total_slots ? 'FULL' : p.status };
+                    }
+                    return p;
+                  }));
+                }
+              } else if (payload.eventType === 'DELETE' && payload.old) {
+                setApplications(prev => prev.filter(a => a.id !== String(payload.old.id)));
+              }
+
+              // Background reconciliation
               const freshApps = await fetchCloudApplications();
               if (freshApps) {
                 setApplications(freshApps);
               }
             } catch (err) {
               console.warn('Realtime application sync failed:', err);
+            }
+          }
+        )
+        // 2. Opportunities changes (participant slot count updates, status changes)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'opportunities' },
+          (payload) => {
+            try {
+              if (payload.eventType === 'UPDATE' && payload.new) {
+                const updatedPost = mapDbRecordToPost(payload.new);
+                setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+              } else if (payload.eventType === 'INSERT' && payload.new) {
+                const newPost = mapDbRecordToPost(payload.new);
+                setPosts(prev => [newPost, ...prev.filter(p => p.id !== newPost.id)]);
+              } else if (payload.eventType === 'DELETE' && payload.old) {
+                setPosts(prev => prev.filter(p => p.id !== String(payload.old.id)));
+              }
+            } catch (err) {
+              console.warn('Realtime opportunity sync failed:', err);
+            }
+          }
+        )
+        // 3. Messages changes (group chat messages in real time)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          (payload) => {
+            try {
+              if (payload.new) {
+                const newMsg = mapDbRecordToMessage(payload.new);
+                setMessages(prev => {
+                  if (prev.some(m => m.id === newMsg.id)) return prev;
+                  return [...prev, newMsg];
+                });
+              }
+            } catch (err) {
+              console.warn('Realtime message sync failed:', err);
+            }
+          }
+        )
+        // 4. Realtime Broadcast for instant zero-latency peer messaging
+        .on(
+          'broadcast',
+          { event: 'new-chat-message' },
+          (payload) => {
+            try {
+              if (payload.payload) {
+                const broadcastMsg = payload.payload as Message;
+                setMessages(prev => {
+                  if (prev.some(m => m.id === broadcastMsg.id)) return prev;
+                  return [...prev, broadcastMsg];
+                });
+              }
+            } catch (err) {
+              console.warn('Broadcast chat sync failed:', err);
             }
           }
         )
@@ -950,8 +1038,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newSlip;
   };
 
-  // Send message to scoped group chat
-  const sendMessage = (postId: string, content: string): boolean => {
+  // Send message to scoped group chat (Persisted to Supabase and Realtime broadcasted)
+  const sendMessage = async (postId: string, content: string): Promise<boolean> => {
     if (!currentUser || !content.trim()) return false;
     const post = posts.find(p => p.id === postId);
     if (!post) return false;
@@ -960,8 +1048,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
+    const tempId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const newMsg: Message = {
-      id: `msg-${Date.now()}`,
+      id: tempId,
       post_id: postId,
       sender_id: currentUser.id,
       sender_name: currentUser.full_name,
@@ -971,8 +1060,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       created_at: new Date().toISOString(),
     };
 
+    // Optimistically update local state immediately so sender sees message without delay
     setMessages(prev => [...prev, newMsg]);
-    return true;
+
+    // Persist to Supabase cloud
+    const cloudRes = await sendCloudMessage(newMsg);
+    if (cloudRes.success && cloudRes.message) {
+      const persistedMsg = cloudRes.message;
+      setMessages(prev => prev.map(m => m.id === tempId ? persistedMsg : m));
+
+      // Broadcast to other authorized members via Realtime WebSocket
+      if (supabase) {
+        supabase.channel('connect-live-sync').send({
+          type: 'broadcast',
+          event: 'new-chat-message',
+          payload: persistedMsg,
+        });
+      }
+      return true;
+    }
+
+    return cloudRes.success;
+  };
+
+  const refreshMessages = async (postId?: string): Promise<void> => {
+    try {
+      const freshMsgs = await fetchCloudMessages(postId);
+      if (freshMsgs && freshMsgs.length > 0) {
+        setMessages(prev => {
+          const map = new Map<string, Message>();
+          prev.forEach(m => map.set(m.id, m));
+          freshMsgs.forEach(m => map.set(m.id, m));
+          return Array.from(map.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        });
+      }
+    } catch (err) {
+      console.warn('refreshMessages error:', err);
+    }
   };
 
   // Invite student to post from Find People Directory
@@ -1056,6 +1180,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isCloudConnected,
         refreshEvents,
         refreshApplications,
+        refreshMessages,
         selectedCategoryFilter,
         setSelectedCategoryFilter,
         registerNewAccount,

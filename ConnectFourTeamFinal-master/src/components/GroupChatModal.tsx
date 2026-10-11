@@ -10,12 +10,19 @@ interface Props {
 }
 
 export const GroupChatModal: React.FC<Props> = ({ post, onClose }) => {
-  const { currentUser, messages, sendMessage, canAccessChat, applications } = useApp();
+  const { currentUser, messages, sendMessage, refreshMessages, canAccessChat, applications } = useApp();
   const [content, setContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const hasAccess = post ? canAccessChat(post, currentUser?.id ?? '') : false;
   const postMessages = post ? messages.filter(m => m.post_id === post.id) : [];
+
+  // Fetch latest messages from Supabase whenever chat is opened for this event
+  useEffect(() => {
+    if (post) {
+      refreshMessages(post.id);
+    }
+  }, [post, refreshMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,11 +65,12 @@ export const GroupChatModal: React.FC<Props> = ({ post, onClose }) => {
       }))
   ];
 
-  const handleSend = (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!content.trim() || !hasAccess) return;
-    sendMessage(post.id, content);
+    const textToSend = content.trim();
     setContent('');
+    await sendMessage(post.id, textToSend);
   };
 
   return (

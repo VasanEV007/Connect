@@ -646,8 +646,21 @@ export async function deleteCloudApplication(
 }
 
 // ----------------------------------------------------------------------------
-// MESSAGES REPOSITORY
+// MESSAGES REPOSITORY (SCOPED REALTIME GROUP CHAT)
 // ----------------------------------------------------------------------------
+
+export function mapDbRecordToMessage(raw: any): Message {
+  return {
+    id: String(raw.id),
+    post_id: String(raw.post_id),
+    sender_id: String(raw.sender_id),
+    sender_name: raw.sender_name || 'Anonymous User',
+    sender_role: (raw.sender_role as UserRole) || 'STUDENT',
+    sender_roll: raw.sender_roll || undefined,
+    content: raw.content || '',
+    created_at: raw.created_at || new Date().toISOString(),
+  };
+}
 
 export function getFallbackMessages(): Message[] {
   try {
@@ -660,6 +673,84 @@ export function getFallbackMessages(): Message[] {
 
 export function saveFallbackMessages(msgs: Message[]) {
   localStorage.setItem(FALLBACK_KEYS.MESSAGES, JSON.stringify(msgs));
+}
+
+/**
+ * Fetches group chat messages from Supabase cloud database.
+ */
+export async function fetchCloudMessages(postId?: string): Promise<Message[]> {
+  if (isSupabaseConfigured() && supabase) {
+    let query = supabase
+      .from('messages')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (postId) {
+      query = query.eq('post_id', postId);
+    }
+
+    const { data, error } = await query;
+    if (!error && data) {
+      const msgs = data.map(mapDbRecordToMessage);
+      if (!postId) {
+        saveFallbackMessages(msgs);
+      }
+      return msgs;
+    }
+    if (error) {
+      console.warn('fetchCloudMessages error:', error.message);
+    }
+  }
+
+  const fallback = getFallbackMessages();
+  return postId ? fallback.filter(m => m.post_id === postId) : fallback;
+}
+
+/**
+ * Inserts and persists a new group chat message in Supabase.
+ */
+export async function sendCloudMessage(
+  msg: Partial<Message>
+): Promise<{ success: boolean; message?: Message; error?: string }> {
+  if (!isSupabaseConfigured() || !supabase) {
+    const localMsg: Message = {
+      id: msg.id || `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      post_id: msg.post_id!,
+      sender_id: msg.sender_id!,
+      sender_name: msg.sender_name || 'User',
+      sender_role: msg.sender_role || 'STUDENT',
+      sender_roll: msg.sender_roll,
+      content: msg.content || '',
+      created_at: msg.created_at || new Date().toISOString(),
+    };
+    const list = getFallbackMessages();
+    list.push(localMsg);
+    saveFallbackMessages(list);
+    return { success: true, message: localMsg };
+  }
+
+  const payload = {
+    post_id: msg.post_id,
+    sender_id: msg.sender_id,
+    sender_name: msg.sender_name,
+    sender_role: msg.sender_role || 'STUDENT',
+    sender_roll: msg.sender_roll || null,
+    content: msg.content?.trim(),
+  };
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('sendCloudMessage error:', error.message);
+    return { success: false, error: error.message };
+  }
+
+  const savedMsg = mapDbRecordToMessage(data);
+  return { success: true, message: savedMsg };
 }
 
 // ----------------------------------------------------------------------------
